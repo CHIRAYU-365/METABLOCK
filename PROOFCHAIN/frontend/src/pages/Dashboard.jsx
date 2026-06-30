@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import * as anchor from '@coral-xyz/anchor';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useAuth } from '../context/AuthContext';
 import { calculateSHA256 } from '../utils/hash';
 import { getProvider, PROGRAM_ID } from '../utils/solana';
+import idl from '../utils/blockchain.json';
 
 const Dashboard = () => {
   const [documents, setDocuments] = useState([]);
@@ -11,7 +13,7 @@ const Dashboard = () => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const wallet = useWallet();
 
   useEffect(() => {
@@ -40,7 +42,7 @@ const Dashboard = () => {
       // 1. Calculate Hash locally (WebCrypto)
       const docHash = await calculateSHA256(file);
       
-      // 2. Upload raw file to Backend -> Pinata IPFS
+      // 2. Upload raw file to Backend -> Pinata IPFS (acting as our metadata DB too)
       const formData = new FormData();
       formData.append('file', file);
       formData.append('docHash', docHash);
@@ -55,29 +57,70 @@ const Dashboard = () => {
 
       // 3. Blockchain Registration
       const provider = getProvider(wallet);
-      const program = new anchor.Program(idl, PROGRAM_ID, provider); // Note: IDL would be imported in a real app
+      const program = new anchor.Program(idl, provider);
       
-      // Since we don't have the generated IDL json available here without a successful build,
-      // we'll simulate the transaction success in UI for now or assume it's injected.
-      // In a real flow:
-      // await program.methods.registerDocument(docHash, ipfsCid).accounts({ ... }).rpc();
+      // Decode hex docHash to 32 bytes Buffer
+      const docHashBytes = Buffer.from(docHash, 'hex');
 
-      alert(`Successfully registered! Hash: ${docHash.substring(0,10)}...`);
+      // Derive PDA
+      const documentRecordPda = anchor.web3.PublicKey.findProgramAddressSync(
+        [Buffer.from("document"), docHashBytes],
+        PROGRAM_ID
+      )[0];
+
+      // Pass the 32-byte array to the program
+      await program.methods.registerDocument(Array.from(docHashBytes), ipfsCid).accounts({
+        documentRecord: documentRecordPda,
+        issuer: wallet.publicKey,
+        systemProgram: anchor.web3.SystemProgram.programId
+      }).rpc();
+
+      alert(`Successfully registered on IPFS & Solana Blockchain! Hash: ${docHash.substring(0,10)}...`);
       setFile(null);
       fetchDocuments();
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || "Upload failed");
+      alert(err.response?.data?.error || err.message || "Upload failed");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleRevoke = async (docHash) => {
+    if (!wallet.connected) return alert("Please connect your wallet first");
+    if (!window.confirm("Are you sure you want to revoke this document on the blockchain? This action is irreversible.")) return;
+
+    try {
+      const provider = getProvider(wallet);
+      const program = new anchor.Program(idl, provider);
+
+      // Decode hex docHash to 32 bytes Buffer
+      const docHashBytes = Buffer.from(docHash, 'hex');
+
+      const documentRecordPda = anchor.web3.PublicKey.findProgramAddressSync(
+        [Buffer.from("document"), docHashBytes],
+        PROGRAM_ID
+      )[0];
+
+      // Pass the 32-byte array to the program
+      await program.methods.revokeDocument(Array.from(docHashBytes)).accounts({
+        documentRecord: documentRecordPda,
+        issuer: wallet.publicKey
+      }).rpc();
+
+      alert("Document successfully revoked on the Solana blockchain!");
+      fetchDocuments();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to revoke: " + err.message);
     }
   };
 
   return (
     <div className="animate-fade-in">
       <div style={styles.header}>
-        <h1>My Dashboard</h1>
-        {!wallet.connected && <div style={styles.warningBanner}>Please connect your Solana wallet to issue documents.</div>}
+        <h1>Welcome, {user?.username || 'Issuer'}</h1>
+        {!wallet.connected && <div style={styles.warningBanner}>Please connect your Solana wallet to issue or revoke documents.</div>}
       </div>
 
       <div style={styles.grid}>
@@ -85,7 +128,7 @@ const Dashboard = () => {
         <div className="glass-panel" style={styles.uploadCard}>
           <h3>Issue New Document</h3>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-            Select a file. We will hash it locally, store it on IPFS via our gateway, and prompt your wallet to register the hash on the Solana blockchain.
+            Select a file. We will hash it locally, store it on IPFS via our gateway, and execute an Anchor program transaction to register it.
           </p>
           <form onSubmit={handleUpload}>
             <div style={styles.dropZone}>
@@ -111,9 +154,9 @@ const Dashboard = () => {
 
         {/* List Section */}
         <div>
-          <h3 style={{ marginBottom: '1rem' }}>My Documents</h3>
+          <h3 style={{ marginBottom: '1rem' }}>My Documents (from Pinata Metadata)</h3>
           {documents.length === 0 ? (
-            <p style={{ color: 'var(--text-secondary)' }}>No documents issued yet.</p>
+            <p style={{ color: 'var(--text-secondary)' }}>No documents pinned yet.</p>
           ) : (
             <div style={styles.list}>
               {documents.map(doc => (
@@ -121,13 +164,20 @@ const Dashboard = () => {
                   <div>
                     <h4 style={{ color: 'var(--accent-secondary)' }}>{doc.name}</h4>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      Hash: {doc.docHash.substring(0, 16)}...
+                      Hash: {doc.docHash?.substring(0, 16)}...
                     </span>
                   </div>
-                  <div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <a href={`https://gateway.pinata.cloud/ipfs/${doc.ipfsCid}`} target="_blank" rel="noreferrer" className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
                       View IPFS
                     </a>
+                    <button 
+                      className="btn-outline" 
+                      onClick={() => handleRevoke(doc.docHash)} 
+                      style={{ padding: '6px 12px', fontSize: '0.8rem', borderColor: 'var(--error)', color: 'var(--error)' }}
+                    >
+                      Revoke
+                    </button>
                   </div>
                 </div>
               ))}

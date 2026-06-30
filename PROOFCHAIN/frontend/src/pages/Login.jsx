@@ -1,56 +1,68 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
+    
     try {
-      const res = await axios.post('http://localhost:3001/api/auth/login', { username, password });
-      login(res.data.token, res.data.user);
+      await login(email, password);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed');
+      setError(err.response?.data?.error || 'Failed to login');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div style={styles.container} className="animate-fade-in">
       <div className="glass-panel" style={styles.card}>
-        <h2 style={{ textAlign: 'center', marginBottom: '2rem' }}>Welcome Back</h2>
+        <h2 style={{ textAlign: 'center', marginBottom: '2rem' }}>Login to ProofChain</h2>
+        
         {error && <div style={styles.error}>{error}</div>}
-        <form onSubmit={handleSubmit}>
-          <div className="input-group">
-            <label>Username</label>
+        
+        <form onSubmit={handleSubmit} style={styles.form}>
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Email Address</label>
             <input 
-              type="text" 
-              value={username} 
-              onChange={(e) => setUsername(e.target.value)} 
-              required 
+              type="email" 
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              style={styles.input}
             />
           </div>
-          <div className="input-group">
-            <label>Password</label>
+          
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Password</label>
             <input 
               type="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              required 
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={styles.input}
             />
           </div>
-          <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '1rem' }}>
-            Login to ProofChain
+
+          <button type="submit" className="btn-primary" disabled={loading} style={{ marginTop: '1rem' }}>
+            {loading ? 'Authenticating...' : 'Login'}
           </button>
         </form>
+
         <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-secondary)' }}>
-          Don't have an account? <Link to="/register" style={{ color: 'var(--accent-primary)' }}>Register</Link>
+          Don't have an account? <Link to="/register" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>Register here</Link>
         </p>
       </div>
     </div>
@@ -68,6 +80,29 @@ const styles = {
     padding: '3rem',
     width: '100%',
     maxWidth: '450px',
+  },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.25rem'
+  },
+  inputGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem'
+  },
+  label: {
+    fontSize: '0.9rem',
+    color: 'var(--text-secondary)'
+  },
+  input: {
+    padding: '0.75rem',
+    borderRadius: '8px',
+    border: '1px solid var(--border-color)',
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    color: 'white',
+    outline: 'none',
+    transition: 'border-color 0.2s',
   },
   error: {
     backgroundColor: 'rgba(239, 68, 68, 0.1)',

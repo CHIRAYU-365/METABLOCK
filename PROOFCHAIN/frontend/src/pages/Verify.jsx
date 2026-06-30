@@ -23,7 +23,7 @@ const Verify = () => {
       const pda = getDocumentPda(docHash);
       
       // 3. Query Solana (Zero-Knowledge via RPC, bypassing our node backend)
-      const connection = new Connection(clusterApiUrl('devnet'), 'processed');
+      const connection = new Connection("http://127.0.0.1:8899", 'processed');
       const accountInfo = await connection.getAccountInfo(pda);
 
       if (!accountInfo) {

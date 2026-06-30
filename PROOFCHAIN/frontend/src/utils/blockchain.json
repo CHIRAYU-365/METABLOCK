@@ -1,0 +1,180 @@
+{
+  "address": "Bm4JopwFvvvH2magffE1xivMtZCC2gTZe2BBNeSC4rew",
+  "metadata": {
+    "name": "blockchain",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "register_document",
+      "discriminator": [
+        108,
+        34,
+        153,
+        39,
+        82,
+        41,
+        133,
+        73
+      ],
+      "accounts": [
+        {
+          "name": "document_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  111,
+                  99,
+                  117,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "doc_hash"
+              }
+            ]
+          }
+        },
+        {
+          "name": "issuer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "doc_hash",
+          "type": "string"
+        },
+        {
+          "name": "ipfs_cid",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "revoke_document",
+      "discriminator": [
+        120,
+        144,
+        209,
+        186,
+        62,
+        51,
+        209,
+        182
+      ],
+      "accounts": [
+        {
+          "name": "document_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  111,
+                  99,
+                  117,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "doc_hash"
+              }
+            ]
+          }
+        },
+        {
+          "name": "issuer",
+          "signer": true,
+          "relations": [
+            "document_record"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "doc_hash",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "DocumentRecord",
+      "discriminator": [
+        13,
+        153,
+        55,
+        14,
+        109,
+        39,
+        136,
+        125
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "Unauthorized",
+      "msg": "Only the counter authority can update this counter"
+    },
+    {
+      "code": 6001,
+      "name": "CounterOverflow",
+      "msg": "Counter has reached the maximum value"
+    }
+  ],
+  "types": [
+    {
+      "name": "DocumentRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "issuer",
+            "type": "pubkey"
+          },
+          {
+            "name": "ipfs_cid",
+            "type": "string"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "is_revoked",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}

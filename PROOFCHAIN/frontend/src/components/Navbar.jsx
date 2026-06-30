@@ -1,15 +1,32 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useWallet } from '@solana/wallet-adapter-react';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const { select, wallets, publicKey, disconnect, connect } = useWallet();
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleConnect = async () => {
+    try {
+      if (window.solana && window.solana.isPhantom) {
+        // Trigger the browser extension directly
+        const resp = await window.solana.connect();
+        // Sync with React context
+        select('Phantom');
+      } else {
+        // Redirect to download if not installed
+        window.open('https://phantom.app/', '_blank');
+      }
+    } catch (err) {
+      console.error("Phantom connection error:", err);
+    }
   };
 
   return (
@@ -32,7 +49,19 @@ const Navbar = () => {
           <Link to="/login" style={styles.link}>Login</Link>
         )}
         <div style={{ marginLeft: '1rem' }}>
-          <WalletMultiButton style={{ backgroundColor: 'var(--accent-primary)', borderRadius: '8px' }} />
+          {publicKey ? (
+            <button 
+              className="btn-primary" 
+              onClick={() => disconnect()}
+              style={{ backgroundColor: 'var(--success)' }}
+            >
+              {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
+            </button>
+          ) : (
+            <button className="btn-primary" onClick={handleConnect}>
+              Connect Wallet
+            </button>
+          )}
         </div>
       </div>
     </nav>

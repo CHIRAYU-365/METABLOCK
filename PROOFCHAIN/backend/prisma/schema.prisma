@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int             @id @default(autoincrement())
+  username      String          @unique
+  passwordHash  String
+  solanaPubkey  String?
+  createdAt     DateTime        @default(now())
+  
+  documents     Document[]      @relation("Owner")
+  sharedWithMe  DocumentShare[] @relation("SharedWith")
+}
+
+model Document {
+  id          Int      @id @default(autoincrement())
+  ownerId     Int
+  name        String
+  ipfsCid     String
+  docHash     String   @unique
+  createdAt   DateTime @default(now())
+  
+  owner       User     @relation("Owner", fields: [ownerId], references: [id])
+  shares      DocumentShare[]
+}
+
+model DocumentShare {
+  id                Int      @id @default(autoincrement())
+  documentId        Int
+  sharedWithUserId  Int
+  createdAt         DateTime @default(now())
+
+  document          Document @relation(fields: [documentId], references: [id])
+  sharedWith        User     @relation("SharedWith", fields: [sharedWithUserId], references: [id])
+
+  @@unique([documentId, sharedWithUserId])
+}

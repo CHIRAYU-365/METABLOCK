@@ -25,7 +25,9 @@ const Navbar = () => {
 
   const handleConnect = async () => {
     try {
-      if (window.solana && window.solana.isPhantom) {
+      if (wallet) {
+        await connect();
+      } else if (window.solana && window.solana.isPhantom) {
         select('Phantom');
         setIsConnecting(true);
       } else {

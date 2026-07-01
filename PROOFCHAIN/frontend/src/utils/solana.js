@@ -2,7 +2,7 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import * as anchor from '@coral-xyz/anchor';
 import { Buffer } from 'buffer';
 
-export const PROGRAM_ID = new PublicKey("Bm4JopwFvvvH2magffE1xivMtZCC2gTZe2BBNeSC4rew");
+export const PROGRAM_ID = new PublicKey("FikMPetL3GTukxxgX2AAgqv7aYfrMisbzNwvzHgxqmKb");
 export const SOLANA_RPC_ENDPOINT = "http://127.0.0.1:8899";
 
 export const getProvider = (wallet) => {

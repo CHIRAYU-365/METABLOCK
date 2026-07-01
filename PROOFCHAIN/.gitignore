@@ -57,3 +57,10 @@ test-ledger/
 backend/prisma/migrations/
 *.db
 *.db-journal
+
+# Linter & Bundler Caches
+.eslintcache
+.cache/
+.parcel-cache/
+.vite/
+

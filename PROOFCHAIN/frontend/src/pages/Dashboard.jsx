@@ -20,9 +20,11 @@ const Dashboard = () => {
     fetchDocuments();
   }, []);
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
   const fetchDocuments = async () => {
     try {
-      const res = await axios.get('http://localhost:3001/api/documents', {
+      const res = await axios.get(`${API_URL}/api/documents`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setDocuments(res.data.myDocs);
@@ -47,7 +49,7 @@ const Dashboard = () => {
       formData.append('file', file);
       formData.append('docHash', docHash);
 
-      const res = await axios.post('http://localhost:3001/api/documents/upload', formData, {
+      const res = await axios.post(`${API_URL}/api/documents/upload`, formData, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'

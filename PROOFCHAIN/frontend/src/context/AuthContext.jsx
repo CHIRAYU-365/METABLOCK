@@ -6,7 +6,7 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(sessionStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,22 +29,24 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, [token]);
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
   const login = async (email, password) => {
-    const res = await axios.post('http://localhost:3001/api/auth/login', { email, password });
+    const res = await axios.post(`${API_URL}/api/auth/login`, { email, password });
     const { token: newToken, user: userData } = res.data;
     setToken(newToken);
     setUser(userData);
-    localStorage.setItem('token', newToken);
+    sessionStorage.setItem('token', newToken);
   };
 
   const register = async (username, email, password) => {
-    await axios.post('http://localhost:3001/api/auth/register', { username, email, password });
+    await axios.post(`${API_URL}/api/auth/register`, { username, email, password });
   };
 
   const logout = () => {
     setToken(null);
     setUser(null);
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
   };
 
   return (

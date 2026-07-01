@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
-import { clusterApiUrl } from '@solana/web3.js';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { SOLANA_RPC_ENDPOINT } from './utils/solana';
 
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
@@ -23,8 +23,7 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
-  const network = 'devnet';
-  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+  const endpoint = useMemo(() => SOLANA_RPC_ENDPOINT, []);
   
   const wallets = useMemo(
     () => [
@@ -33,9 +32,16 @@ function App() {
     []
   );
 
+  useEffect(() => {
+    // Clear storage on project startup/load to connect wallet & login afresh
+    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
+    localStorage.removeItem('walletName');
+  }, []);
+
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
+      <WalletProvider wallets={wallets} autoConnect={false}>
         <WalletModalProvider>
           <AuthProvider>
             <BrowserRouter>

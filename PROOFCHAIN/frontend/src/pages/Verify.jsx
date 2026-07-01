@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Connection, clusterApiUrl } from '@solana/web3.js';
+import { Connection } from '@solana/web3.js';
 import { calculateSHA256 } from '../utils/hash';
-import { getDocumentPda } from '../utils/solana';
+import { getDocumentPda, SOLANA_RPC_ENDPOINT } from '../utils/solana';
 
 const Verify = () => {
   const [file, setFile] = useState(null);
@@ -23,7 +23,7 @@ const Verify = () => {
       const pda = getDocumentPda(docHash);
       
       // 3. Query Solana (Zero-Knowledge via RPC, bypassing our node backend)
-      const connection = new Connection("http://127.0.0.1:8899", 'processed');
+      const connection = new Connection(SOLANA_RPC_ENDPOINT, 'processed');
       const accountInfo = await connection.getAccountInfo(pda);
 
       if (!accountInfo) {

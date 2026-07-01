@@ -58,7 +58,12 @@
       "args": [
         {
           "name": "doc_hash",
-          "type": "string"
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
         },
         {
           "name": "ipfs_cid",
@@ -115,7 +120,12 @@
       "args": [
         {
           "name": "doc_hash",
-          "type": "string"
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
         }
       ]
     }
@@ -175,6 +185,23 @@
           }
         ]
       }
+    }
+  ],
+  "constants": [
+    {
+      "name": "COUNTER_SEED",
+      "type": "bytes",
+      "value": "[99, 111, 117, 110, 116, 101, 114]"
+    },
+    {
+      "name": "HELLO_WORLD_LAMPORTS",
+      "type": "u64",
+      "value": "1"
+    },
+    {
+      "name": "MAX_COUNT",
+      "type": "u64",
+      "value": "10"
     }
   ]
 }

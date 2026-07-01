@@ -3,9 +3,10 @@ import * as anchor from '@coral-xyz/anchor';
 import { Buffer } from 'buffer';
 
 export const PROGRAM_ID = new PublicKey("Bm4JopwFvvvH2magffE1xivMtZCC2gTZe2BBNeSC4rew");
+export const SOLANA_RPC_ENDPOINT = "http://127.0.0.1:8899";
 
 export const getProvider = (wallet) => {
-  const connection = new Connection("http://127.0.0.1:8899", 'processed');
+  const connection = new Connection(SOLANA_RPC_ENDPOINT, 'processed');
   const provider = new anchor.AnchorProvider(connection, wallet, { preflightCommitment: 'processed' });
   return provider;
 };

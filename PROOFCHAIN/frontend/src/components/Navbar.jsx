@@ -1,12 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '@solana/wallet-adapter-react';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
-  const { select, wallets, publicKey, disconnect, connect } = useWallet();
+  const { select, wallet, publicKey, disconnect, connect } = useWallet();
   const navigate = useNavigate();
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  useEffect(() => {
+    if (isConnecting && wallet) {
+      setIsConnecting(false);
+      connect().catch((err) => {
+        console.error("Wallet connect error:", err);
+      });
+    }
+  }, [isConnecting, wallet, connect]);
 
   const handleLogout = () => {
     logout();
@@ -16,10 +26,8 @@ const Navbar = () => {
   const handleConnect = async () => {
     try {
       if (window.solana && window.solana.isPhantom) {
-        // Trigger the browser extension directly
-        const resp = await window.solana.connect();
-        // Sync with React context
         select('Phantom');
+        setIsConnecting(true);
       } else {
         // Redirect to download if not installed
         window.open('https://phantom.app/', '_blank');

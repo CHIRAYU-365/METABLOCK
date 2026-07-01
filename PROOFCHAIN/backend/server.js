@@ -6,12 +6,39 @@ const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { PinataSDK } = require('pinata-web3');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const prisma = new PrismaClient();
 
-app.use(cors());
+// Configure CORS (Phase 1 Security)
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',') 
+  : ['http://localhost:5173', 'http://localhost:3000'];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}));
+
 app.use(express.json());
+
+// Rate Limiter for Auth Routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // limit each IP to 10 requests per windowMs
+  message: { error: 'Too many authentication attempts, please try again later.' }
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', uptime: process.uptime() });
+});
 
 // Pinata initialization
 const pinata = new PinataSDK({
@@ -39,9 +66,14 @@ const authenticateToken = (req, res, next) => {
 
 // --- AUTHENTICATION ROUTES (JWT / Prisma) ---
 
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', authLimiter, async (req, res) => {
   try {
     const { username, email, password } = req.body;
+    
+    // Basic Input Validation
+    if (!username || username.length < 3) return res.status(400).json({ error: "Username must be at least 3 characters" });
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ error: "Invalid email format" });
+    if (!password || password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
     
     // Check if user exists
     const existingUser = await prisma.user.findFirst({
@@ -63,9 +95,11 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
+    
+    if (!email || !password) return res.status(400).json({ error: "Email and password are required" });
     
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(400).json({ error: "Invalid credentials" });

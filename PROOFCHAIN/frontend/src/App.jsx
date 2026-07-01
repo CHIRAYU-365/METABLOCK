@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Verify from './pages/Verify';
+import { Toaster } from 'react-hot-toast';
 
 import '@solana/wallet-adapter-react-ui/styles.css';
 import './index.css';
@@ -62,6 +63,7 @@ function App() {
                     />
                   </Routes>
                 </main>
+                <Toaster position="bottom-right" toastOptions={{ style: { background: '#121216', color: '#fff', border: '1px solid rgba(255, 255, 255, 0.1)' } }} />
               </div>
             </BrowserRouter>
           </AuthProvider>

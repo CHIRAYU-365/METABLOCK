@@ -6,12 +6,16 @@ import { useAuth } from '../context/AuthContext';
 import { calculateSHA256 } from '../utils/hash';
 import { getProvider, PROGRAM_ID } from '../utils/solana';
 import idl from '../utils/blockchain.json';
+import toast from 'react-hot-toast';
+import { Copy, ExternalLink, Check } from 'lucide-react';
 
 const Dashboard = () => {
   const [documents, setDocuments] = useState([]);
   const [sharedDocs, setSharedDocs] = useState([]);
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [loadingDocs, setLoadingDocs] = useState(true);
+  const [copied, setCopied] = useState(null);
   
   const { token, user } = useAuth();
   const wallet = useWallet();
@@ -23,6 +27,7 @@ const Dashboard = () => {
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
   const fetchDocuments = async () => {
+    setLoadingDocs(true);
     try {
       const res = await axios.get(`${API_URL}/api/documents`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -31,13 +36,23 @@ const Dashboard = () => {
       setSharedDocs(res.data.sharedWithMe);
     } catch (err) {
       console.error(err);
+      toast.error("Failed to load documents");
+    } finally {
+      setLoadingDocs(false);
     }
+  };
+
+  const copyToClipboard = (text, type) => {
+    navigator.clipboard.writeText(text);
+    setCopied(text);
+    toast.success(`${type} copied to clipboard!`, { id: 'copy' });
+    setTimeout(() => setCopied(null), 2000);
   };
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!file) return alert("Please select a file");
-    if (!wallet.connected) return alert("Please connect your Solana wallet first");
+    if (!file) return toast.error("Please select a file");
+    if (!wallet.connected) return toast.error("Please connect your Solana wallet first");
 
     setUploading(true);
     try {
@@ -71,25 +86,31 @@ const Dashboard = () => {
       )[0];
 
       // Pass the 32-byte array to the program
-      await program.methods.registerDocument(Array.from(docHashBytes), ipfsCid).accounts({
+      const txId = await program.methods.registerDocument(Array.from(docHashBytes), ipfsCid).accounts({
         documentRecord: documentRecordPda,
         issuer: wallet.publicKey,
         systemProgram: anchor.web3.SystemProgram.programId
       }).rpc();
 
-      alert(`Successfully registered on IPFS & Solana Blockchain! Hash: ${docHash.substring(0,10)}...`);
+      toast.success(
+        <div>
+          Successfully registered! <br/>
+          <a href={`https://explorer.solana.com/tx/${txId}?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899`} target="_blank" rel="noreferrer" style={{ textDecoration: 'underline', color: 'var(--accent-primary)' }}>View on Explorer</a>
+        </div>, 
+        { duration: 5000 }
+      );
       setFile(null);
       fetchDocuments();
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || err.message || "Upload failed");
+      toast.error(err.response?.data?.error || err.message || "Upload failed");
     } finally {
       setUploading(false);
     }
   };
 
   const handleRevoke = async (docHash) => {
-    if (!wallet.connected) return alert("Please connect your wallet first");
+    if (!wallet.connected) return toast.error("Please connect your wallet first");
     if (!window.confirm("Are you sure you want to revoke this document on the blockchain? This action is irreversible.")) return;
 
     try {
@@ -105,16 +126,22 @@ const Dashboard = () => {
       )[0];
 
       // Pass the 32-byte array to the program
-      await program.methods.revokeDocument(Array.from(docHashBytes)).accounts({
+      const txId = await program.methods.revokeDocument(Array.from(docHashBytes)).accounts({
         documentRecord: documentRecordPda,
         issuer: wallet.publicKey
       }).rpc();
 
-      alert("Document successfully revoked on the Solana blockchain!");
+      toast.success(
+        <div>
+          Document revoked! <br/>
+          <a href={`https://explorer.solana.com/tx/${txId}?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899`} target="_blank" rel="noreferrer" style={{ textDecoration: 'underline', color: 'var(--accent-primary)' }}>View on Explorer</a>
+        </div>,
+        { duration: 5000 }
+      );
       fetchDocuments();
     } catch (err) {
       console.error(err);
-      alert("Failed to revoke: " + err.message);
+      toast.error("Failed to revoke: " + err.message);
     }
   };
 
@@ -125,7 +152,7 @@ const Dashboard = () => {
         {!wallet.connected && <div style={styles.warningBanner}>Please connect your Solana wallet to issue or revoke documents.</div>}
       </div>
 
-      <div style={styles.grid}>
+      <div className="dashboard-grid">
         {/* Upload Section */}
         <div className="glass-panel" style={styles.uploadCard}>
           <h3>Issue New Document</h3>
@@ -157,7 +184,13 @@ const Dashboard = () => {
         {/* List Section */}
         <div>
           <h3 style={{ marginBottom: '1rem' }}>My Documents (from Pinata Metadata)</h3>
-          {documents.length === 0 ? (
+          {loadingDocs ? (
+            <div style={styles.list}>
+              {[1, 2, 3].map(i => (
+                <div key={i} className="glass-panel skeleton" style={{ height: '80px' }}></div>
+              ))}
+            </div>
+          ) : documents.length === 0 ? (
             <p style={{ color: 'var(--text-secondary)' }}>No documents pinned yet.</p>
           ) : (
             <div style={styles.list}>
@@ -165,14 +198,20 @@ const Dashboard = () => {
                 <div key={doc.id} className="glass-panel" style={styles.listItem}>
                   <div>
                     <h4 style={{ color: 'var(--accent-secondary)' }}>{doc.name}</h4>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       Hash: {doc.docHash?.substring(0, 16)}...
+                      <button onClick={() => copyToClipboard(doc.docHash, 'Hash')} style={{ background: 'transparent', color: copied === doc.docHash ? 'var(--success)' : 'inherit' }}>
+                        {copied === doc.docHash ? <Check size={14} /> : <Copy size={14} />}
+                      </button>
                     </span>
                   </div>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <a href={`https://gateway.pinata.cloud/ipfs/${doc.ipfsCid}`} target="_blank" rel="noreferrer" className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
-                      View IPFS
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <a href={`https://gateway.pinata.cloud/ipfs/${doc.ipfsCid}`} target="_blank" rel="noreferrer" className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      IPFS <ExternalLink size={14} />
                     </a>
+                    <button onClick={() => copyToClipboard(doc.ipfsCid, 'CID')} style={{ background: 'transparent', color: copied === doc.ipfsCid ? 'var(--success)' : 'var(--text-secondary)', padding: '0 4px' }}>
+                      {copied === doc.ipfsCid ? <Check size={16} /> : <Copy size={16} />}
+                    </button>
                     <button 
                       className="btn-outline" 
                       onClick={() => handleRevoke(doc.docHash)} 
@@ -187,7 +226,11 @@ const Dashboard = () => {
           )}
 
           <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Shared With Me</h3>
-          {sharedDocs.length === 0 ? (
+          {loadingDocs ? (
+            <div style={styles.list}>
+              <div className="glass-panel skeleton" style={{ height: '80px' }}></div>
+            </div>
+          ) : sharedDocs.length === 0 ? (
             <p style={{ color: 'var(--text-secondary)' }}>No shared documents.</p>
           ) : (
              <div style={styles.list}>
@@ -199,10 +242,13 @@ const Dashboard = () => {
                       Owner: {doc.owner?.username}
                     </span>
                   </div>
-                  <div>
-                    <a href={`https://gateway.pinata.cloud/ipfs/${doc.ipfsCid}`} target="_blank" rel="noreferrer" className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
-                      View IPFS
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <a href={`https://gateway.pinata.cloud/ipfs/${doc.ipfsCid}`} target="_blank" rel="noreferrer" className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      IPFS <ExternalLink size={14} />
                     </a>
+                    <button onClick={() => copyToClipboard(doc.ipfsCid, 'CID')} style={{ background: 'transparent', color: copied === doc.ipfsCid ? 'var(--success)' : 'var(--text-secondary)', padding: '0 4px' }}>
+                      {copied === doc.ipfsCid ? <Check size={16} /> : <Copy size={16} />}
+                    </button>
                   </div>
                 </div>
               ))}
@@ -225,11 +271,6 @@ const styles = {
     borderRadius: '8px',
     marginTop: '1rem',
     border: '1px solid rgba(245, 158, 11, 0.2)'
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 2fr',
-    gap: '2rem',
   },
   uploadCard: {
     padding: '2rem',

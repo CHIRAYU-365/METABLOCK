@@ -64,3 +64,19 @@ backend/prisma/migrations/
 .parcel-cache/
 .vite/
 
+# Vercel / Netlify
+.vercel/
+.netlify/
+
+# Mac / Windows OS Files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Monorepo specifically ignored
+frontend/node_modules/
+backend/node_modules/
+frontend/dist/
+frontend/build/
+blockchain/target/
+blockchain/.anchor/

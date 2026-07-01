@@ -2,11 +2,21 @@ import React, { useState } from 'react';
 import { Connection } from '@solana/web3.js';
 import { calculateSHA256 } from '../utils/hash';
 import { getDocumentPda, SOLANA_RPC_ENDPOINT } from '../utils/solana';
+import toast from 'react-hot-toast';
+import { Copy, Check } from 'lucide-react';
 
 const Verify = () => {
   const [file, setFile] = useState(null);
   const [verifying, setVerifying] = useState(false);
   const [result, setResult] = useState(null);
+  const [copied, setCopied] = useState(null);
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopied(text);
+    toast.success('Hash copied to clipboard!', { id: 'copy' });
+    setTimeout(() => setCopied(null), 2000);
+  };
 
   const handleVerify = async (e) => {
     e.preventDefault();
@@ -50,6 +60,7 @@ const Verify = () => {
 
     } catch (err) {
       console.error(err);
+      toast.error('Failed to verify with the blockchain network.');
       setResult({ status: 'ERROR', message: 'Failed to verify with the blockchain network.' });
     } finally {
       setVerifying(false);
@@ -96,9 +107,12 @@ const Verify = () => {
             <h3 style={{ marginBottom: '0.5rem' }}>Status: {result.status}</h3>
             <p>{result.message}</p>
             {result.hash && (
-              <p style={{ marginTop: '1rem', fontSize: '0.8rem', opacity: 0.8, wordBreak: 'break-all' }}>
-                SHA-256: {result.hash}
-              </p>
+              <div style={{ marginTop: '1rem', fontSize: '0.8rem', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '0.5rem', wordBreak: 'break-all' }}>
+                <span>SHA-256: {result.hash}</span>
+                <button onClick={() => copyToClipboard(result.hash)} style={{ background: 'transparent', color: copied === result.hash ? 'var(--success)' : 'inherit' }}>
+                  {copied === result.hash ? <Check size={14} /> : <Copy size={14} />}
+                </button>
+              </div>
             )}
           </div>
         )}

@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { PinataSDK } = require('pinata-web3');
 

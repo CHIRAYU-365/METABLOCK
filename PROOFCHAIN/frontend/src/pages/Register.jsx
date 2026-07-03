@@ -5,7 +5,6 @@ const Register = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('USER');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
@@ -15,7 +14,7 @@ const Register = () => {
     setError('');
     setLoading(true);
     try {
-      await register(username, email, password, role);
+      await register(username, email, password);
       navigate('/login');
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed');
@@ -58,18 +57,6 @@ const Register = () => {
               onChange={(e) => setPassword(e.target.value)}
               style={styles.input}
             />
-          </div>
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Account Role</label>
-            <select 
-              value={role} 
-              onChange={(e) => setRole(e.target.value)}
-              style={{...styles.input, appearance: 'auto'}}
-            >
-              <option value="USER">Standard User</option>
-              <option value="ADMIN">Admin (Requires Approval)</option>
-              <option value="SUPER_ADMIN">Super Admin</option>
-            </select>
           </div>
           <button type="submit" className="btn-primary" disabled={loading} style={{ marginTop: '1rem' }}>
             {loading ? 'Creating Account...' : 'Register'}

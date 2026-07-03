@@ -1,37 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 const Navbar = () => {
   const { user, logout } = useAuth();
-  const { select, wallet, publicKey, disconnect, connect } = useWallet();
-  const navigate = useNavigate();
-  const [isConnecting, setIsConnecting] = useState(false);
-  useEffect(() => {
-    if (isConnecting && wallet) {
-      setIsConnecting(false);
-      connect().catch((err) => {
-        console.error("Wallet connect error:", err);
-      });
-    }
-  }, [isConnecting, wallet, connect]);
   const handleLogout = () => {
     logout();
     navigate('/login');
-  };
-  const handleConnect = async () => {
-    try {
-      if (wallet) {
-        await connect();
-      } else if (window.solana && window.solana.isPhantom) {
-        select('Phantom');
-        setIsConnecting(true);
-      } else {
-        window.open('https://phantom.app/', '_blank');
-      }
-    } catch (err) {
-      console.error("Phantom connection error:", err);
-    }
   };
   return (
     <nav style={styles.nav} className="glass-panel">
@@ -57,21 +32,11 @@ const Navbar = () => {
         ) : (
           <Link to="/login" style={styles.link}>Login</Link>
         )}
-        <div style={{ marginLeft: '1rem' }}>
-          {publicKey ? (
-            <button 
-              className="btn-primary" 
-              onClick={() => disconnect()}
-              style={{ backgroundColor: 'var(--success)' }}
-            >
-              {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
-            </button>
-          ) : (
-            <button className="btn-primary" onClick={handleConnect}>
-              Connect Wallet
-            </button>
-          )}
-        </div>
+        {(user?.role === 'USER' || user?.role === 'ADMIN') && (
+          <div style={{ marginLeft: '1rem' }}>
+            <WalletMultiButton style={{ backgroundColor: 'var(--accent-primary)', borderRadius: '8px', height: '42px' }} />
+          </div>
+        )}
       </div>
     </nav>
   );

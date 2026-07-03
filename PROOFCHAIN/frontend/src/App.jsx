@@ -35,11 +35,6 @@ function App() {
     ],
     []
   );
-  useEffect(() => {
-    localStorage.removeItem('token');
-    sessionStorage.removeItem('token');
-    localStorage.removeItem('walletName');
-  }, []);
   return (
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect={false}>

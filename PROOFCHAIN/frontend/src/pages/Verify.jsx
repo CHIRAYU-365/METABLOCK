@@ -4,60 +4,38 @@ import { calculateSHA256 } from '../utils/hash';
 import { getDocumentPda, SOLANA_RPC_ENDPOINT } from '../utils/solana';
 import toast from 'react-hot-toast';
 import { Copy, Check } from 'lucide-react';
-
 const Verify = () => {
   const [file, setFile] = useState(null);
   const [verifying, setVerifying] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(null);
-
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
     setCopied(text);
     toast.success('Hash copied to clipboard!', { id: 'copy' });
     setTimeout(() => setCopied(null), 2000);
   };
-
   const handleVerify = async (e) => {
     e.preventDefault();
     if (!file) return;
-
     setVerifying(true);
     setResult(null);
-
     try {
-      // 1. Calculate Hash Locally
       const docHash = await calculateSHA256(file);
-      
-      // 2. Derive PDA
       const pda = getDocumentPda(docHash);
-      
-      // 3. Query Solana (Zero-Knowledge via RPC, bypassing our node backend)
       const connection = new Connection(SOLANA_RPC_ENDPOINT, 'processed');
       const accountInfo = await connection.getAccountInfo(pda);
-
       if (!accountInfo) {
         setResult({ status: 'FAKE', message: 'Document tampered or not found on blockchain.', hash: docHash });
       } else {
-        // Decode the data (Simple manual decode or using anchor)
-        // Since we know the layout from SRS:
-        // offset 8 (discriminator) + 32 (issuer) + 4+length (string) + 8 (timestamp) + 1 (is_revoked) + 1 (bump)
-        // To precisely read is_revoked, we can use borsh or just manually read the byte before the bump.
-        // It's easier if we had the IDL, but roughly, we can check if it exists it's at least registered.
-        // Let's assume we decode it properly.
-        // We will just mark it as AUTHENTIC if account exists for simplicity in this demo without the full Anchor IDL.
-        
-        // Let's simulate extracting the is_revoked flag (which is the second to last byte)
         const data = accountInfo.data;
         const isRevoked = data[data.length - 2] === 1;
-
         if (isRevoked) {
           setResult({ status: 'REVOKED', message: 'Document was revoked by the issuer.', hash: docHash });
         } else {
           setResult({ status: 'AUTHENTIC', message: 'Cryptographic proof verified on Solana.', hash: docHash });
         }
       }
-
     } catch (err) {
       console.error(err);
       toast.error('Failed to verify with the blockchain network.');
@@ -66,7 +44,6 @@ const Verify = () => {
       setVerifying(false);
     }
   };
-
   return (
     <div className="animate-fade-in" style={styles.container}>
       <div className="glass-panel" style={styles.card}>
@@ -76,7 +53,6 @@ const Verify = () => {
             Check authenticity directly against the Solana Ledger. The file never leaves your browser.
           </p>
         </div>
-
         <form onSubmit={handleVerify}>
           <div style={styles.dropZone}>
             <input 
@@ -97,7 +73,6 @@ const Verify = () => {
             {verifying ? 'Running Cryptographic Verification...' : 'Verify Document'}
           </button>
         </form>
-
         {result && (
           <div style={{...styles.resultBox, ...(
             result.status === 'AUTHENTIC' ? styles.authentic : 
@@ -120,7 +95,6 @@ const Verify = () => {
     </div>
   );
 };
-
 const styles = {
   container: {
     display: 'flex',
@@ -181,5 +155,4 @@ const styles = {
     color: 'var(--text-primary)'
   }
 };
-
 export default Verify;

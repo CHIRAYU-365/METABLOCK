@@ -2,13 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '@solana/wallet-adapter-react';
-
 const Navbar = () => {
   const { user, logout } = useAuth();
   const { select, wallet, publicKey, disconnect, connect } = useWallet();
   const navigate = useNavigate();
   const [isConnecting, setIsConnecting] = useState(false);
-
   useEffect(() => {
     if (isConnecting && wallet) {
       setIsConnecting(false);
@@ -17,12 +15,10 @@ const Navbar = () => {
       });
     }
   }, [isConnecting, wallet, connect]);
-
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
-
   const handleConnect = async () => {
     try {
       if (wallet) {
@@ -31,14 +27,12 @@ const Navbar = () => {
         select('Phantom');
         setIsConnecting(true);
       } else {
-        // Redirect to download if not installed
         window.open('https://phantom.app/', '_blank');
       }
     } catch (err) {
       console.error("Phantom connection error:", err);
     }
   };
-
   return (
     <nav style={styles.nav} className="glass-panel">
       <div style={styles.logo}>
@@ -50,7 +44,12 @@ const Navbar = () => {
         <Link to="/verify" style={styles.link}>Verify Document</Link>
         {user ? (
           <>
-            <Link to="/" style={styles.link}>Dashboard</Link>
+            <Link to="/" style={styles.link}>
+              Dashboard 
+              {user.role !== 'USER' && (
+                <span style={styles.roleBadge}>{user.role.replace('_', ' ')}</span>
+              )}
+            </Link>
             <button className="btn-outline" onClick={handleLogout} style={{ marginLeft: '1rem', padding: '8px 16px' }}>
               Logout
             </button>
@@ -77,7 +76,6 @@ const Navbar = () => {
     </nav>
   );
 };
-
 const styles = {
   nav: {
     display: 'flex',
@@ -101,7 +99,18 @@ const styles = {
     fontWeight: '500',
     color: 'var(--text-secondary)',
     transition: 'color 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem'
+  },
+  roleBadge: {
+    fontSize: '0.65rem',
+    backgroundColor: 'var(--primary)',
+    color: '#fff',
+    padding: '2px 6px',
+    borderRadius: '8px',
+    fontWeight: 'bold',
+    letterSpacing: '0.5px'
   }
 };
-
 export default Navbar;

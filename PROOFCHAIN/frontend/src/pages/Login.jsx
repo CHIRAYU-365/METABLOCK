@@ -1,21 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
   const { login } = useAuth();
   const navigate = useNavigate();
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    
     try {
       await login(email, password);
       navigate('/');
@@ -25,14 +21,11 @@ const Login = () => {
       setLoading(false);
     }
   };
-
   return (
     <div style={styles.container} className="animate-fade-in">
       <div className="glass-panel" style={styles.card}>
         <h2 style={{ textAlign: 'center', marginBottom: '2rem' }}>Login to ProofChain</h2>
-        
         {error && <div style={styles.error}>{error}</div>}
-        
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.inputGroup}>
             <label style={styles.label}>Email Address</label>
@@ -44,7 +37,6 @@ const Login = () => {
               style={styles.input}
             />
           </div>
-          
           <div style={styles.inputGroup}>
             <label style={styles.label}>Password</label>
             <input 
@@ -55,12 +47,10 @@ const Login = () => {
               style={styles.input}
             />
           </div>
-
           <button type="submit" className="btn-primary" disabled={loading} style={{ marginTop: '1rem' }}>
             {loading ? 'Authenticating...' : 'Login'}
           </button>
         </form>
-
         <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-secondary)' }}>
           Don't have an account? <Link to="/register" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>Register here</Link>
         </p>
@@ -68,7 +58,6 @@ const Login = () => {
     </div>
   );
 };
-
 const styles = {
   container: {
     display: 'flex',
@@ -114,5 +103,4 @@ const styles = {
     border: '1px solid rgba(239, 68, 68, 0.2)'
   }
 };
-
 export default Login;

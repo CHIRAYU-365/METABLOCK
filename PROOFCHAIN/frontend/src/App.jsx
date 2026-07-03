@@ -5,41 +5,41 @@ import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SOLANA_RPC_ENDPOINT } from './utils/solana';
-
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Verify from './pages/Verify';
 import { Toaster } from 'react-hot-toast';
-
 import '@solana/wallet-adapter-react-ui/styles.css';
 import './index.css';
-
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) return <div>Loading...</div>;
   if (!user) return <Navigate to="/login" />;
   return children;
 };
-
+const RoleDashboard = () => {
+  const { user } = useAuth();
+  if (user?.role === 'SUPER_ADMIN') return <SuperAdminDashboard />;
+  if (user?.role === 'ADMIN') return <AdminDashboard />;
+  return <Dashboard />; 
+};
 function App() {
   const endpoint = useMemo(() => SOLANA_RPC_ENDPOINT, []);
-  
   const wallets = useMemo(
     () => [
       new PhantomWalletAdapter()
     ],
     []
   );
-
   useEffect(() => {
-    // Clear storage on project startup/load to connect wallet & login afresh
     localStorage.removeItem('token');
     sessionStorage.removeItem('token');
     localStorage.removeItem('walletName');
   }, []);
-
   return (
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect={false}>
@@ -57,7 +57,7 @@ function App() {
                       path="/" 
                       element={
                         <ProtectedRoute>
-                          <Dashboard />
+                          <RoleDashboard />
                         </ProtectedRoute>
                       } 
                     />
@@ -72,5 +72,4 @@ function App() {
     </ConnectionProvider>
   );
 }
-
 export default App;

@@ -80,3 +80,8 @@ frontend/dist/
 frontend/build/
 blockchain/target/
 blockchain/.anchor/
+
+# Antigravity IDE and temporary scripts
+.gemini/
+.agents/
+remove_comments.js

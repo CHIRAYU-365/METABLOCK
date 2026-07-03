@@ -4,6 +4,7 @@ import * as anchor from '@coral-xyz/anchor';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useAuth } from '../context/AuthContext';
 import { calculateSHA256 } from '../utils/hash';
+import { abstractHash } from '../utils/mask';
 import { getProvider, PROGRAM_ID } from '../utils/solana';
 import idl from '../utils/blockchain.json';
 import toast from 'react-hot-toast';
@@ -182,10 +183,16 @@ const AdminDashboard = () => {
                 <div key={doc.id} className="glass-panel" style={styles.listItem}>
                   <div>
                     <h4 style={{ color: 'var(--accent-secondary)' }}>{doc.name}</h4>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      Hash: {doc.docHash?.substring(0, 16)}...
+                    <div style={styles.hash}>
+                      Hash: {abstractHash(doc.docHash)}
                       <button onClick={() => copyToClipboard(doc.docHash, 'Hash')} style={{ background: 'transparent', color: copied === doc.docHash ? 'var(--success)' : 'inherit' }}>
                         {copied === doc.docHash ? <Check size={14} /> : <Copy size={14} />}
+                      </button>
+                    </div>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '4px' }}>
+                      IPFS: {abstractHash(doc.ipfsCid, 4, 4)}
+                      <button onClick={() => copyToClipboard(doc.ipfsCid, 'IPFS CID')} style={{ background: 'transparent', color: copied === doc.ipfsCid ? 'var(--success)' : 'inherit' }}>
+                        {copied === doc.ipfsCid ? <Check size={14} /> : <Copy size={14} />}
                       </button>
                     </span>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginTop: '4px' }}>

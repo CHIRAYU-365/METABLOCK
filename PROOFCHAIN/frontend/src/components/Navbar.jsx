@@ -11,7 +11,8 @@ const Navbar = () => {
   return (
     <nav style={styles.nav} className="glass-panel">
       <div style={styles.logo}>
-        <Link to="/">
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <img src="/logo.png" alt="ProofChain Logo" style={{ height: '36px', width: '36px', objectFit: 'contain' }} />
           <h2 className="gradient-text">ProofChain</h2>
         </Link>
       </div>

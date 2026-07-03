@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Connection } from '@solana/web3.js';
 import { calculateSHA256 } from '../utils/hash';
+import { abstractHash } from '../utils/mask';
 import { getDocumentPda, SOLANA_RPC_ENDPOINT } from '../utils/solana';
 import toast from 'react-hot-toast';
 import { Copy, Check } from 'lucide-react';
@@ -83,7 +84,7 @@ const Verify = () => {
             <p>{result.message}</p>
             {result.hash && (
               <div style={{ marginTop: '1rem', fontSize: '0.8rem', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '0.5rem', wordBreak: 'break-all' }}>
-                <span>SHA-256: {result.hash}</span>
+                <span>SHA-256: {abstractHash(result.hash, 8, 8)}</span>
                 <button onClick={() => copyToClipboard(result.hash)} style={{ background: 'transparent', color: copied === result.hash ? 'var(--success)' : 'inherit' }}>
                   {copied === result.hash ? <Check size={14} /> : <Copy size={14} />}
                 </button>

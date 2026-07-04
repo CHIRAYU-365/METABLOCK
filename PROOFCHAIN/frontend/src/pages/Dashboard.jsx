@@ -8,6 +8,8 @@ import { abstractHash } from '../utils/mask';
 import { QRCodeSVG } from 'qrcode.react';
 import CertificateCanvas from '../components/CertificateCanvas';
 import ZKSelector from '../components/ZKSelector';
+import { Connection } from '@solana/web3.js';
+import { getDocumentPda, SOLANA_RPC_ENDPOINT } from '../utils/solana';
 
 const Dashboard = () => {
   const [documents, setDocuments] = useState([]);
@@ -15,11 +17,42 @@ const Dashboard = () => {
   const [copied, setCopied] = useState(null);
   const [signedDocs, setSignedDocs] = useState({});
   const [selectedDocId, setSelectedDocId] = useState(null);
+  const [revokedDocs, setRevokedDocs] = useState({});
   const { token, user } = useAuth();
   const wallet = useWallet();
+  
   useEffect(() => {
     fetchDocuments();
   }, []);
+
+  useEffect(() => {
+    if (documents.length > 0) {
+      checkRevocationStatuses();
+    }
+  }, [documents]);
+
+  const checkRevocationStatuses = async () => {
+    const statuses = {};
+    try {
+      const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
+      for (const doc of documents) {
+        try {
+          const pda = getDocumentPda(doc.docHash);
+          const accountInfo = await connection.getAccountInfo(pda);
+          if (accountInfo) {
+            const data = accountInfo.data;
+            const isRevoked = data[data.length - 2] === 1;
+            statuses[doc.docHash] = isRevoked;
+          }
+        } catch (e) {
+          console.error("Error reading PDA status", e);
+        }
+      }
+      setRevokedDocs(statuses);
+    } catch (err) {
+      console.error(err);
+    }
+  };
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
   const fetchDocuments = async () => {
     setLoadingDocs(true);
@@ -55,6 +88,9 @@ const Dashboard = () => {
       toast.error("Signature failed or rejected");
     }
   };
+
+  const visibleDocs = documents.filter(doc => !revokedDocs[doc.docHash]);
+
   return (
     <div className="animate-fade-in">
       <div style={styles.header}>
@@ -74,9 +110,13 @@ const Dashboard = () => {
             <div className="glass-panel" style={{ textAlign: 'center', padding: '3rem' }}>
               <p style={{ color: 'var(--text-secondary)' }}>You don't have any certificates issued to you yet.</p>
             </div>
+          ) : visibleDocs.length === 0 ? (
+            <div className="glass-panel" style={{ textAlign: 'center', padding: '3rem' }}>
+              <p style={{ color: 'var(--text-secondary)' }}>All issued certificates have been revoked.</p>
+            </div>
           ) : (
             <div style={styles.list}>
-              {documents.map(doc => (
+              {visibleDocs.map(doc => (
                 <React.Fragment key={doc.id}>
                 <div className="glass-panel" style={styles.listItem}>
                   <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>

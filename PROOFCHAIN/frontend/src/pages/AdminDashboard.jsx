@@ -25,7 +25,6 @@ const AdminDashboard = () => {
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [copied, setCopied] = useState(null);
   const [revokedDocs, setRevokedDocs] = useState({});
-  const [hideRevoked, setHideRevoked] = useState(false);
   const { token, user } = useAuth();
   const wallet = useWallet();
   useEffect(() => {
@@ -61,9 +60,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const visibleDocs = hideRevoked
-    ? documents.filter(doc => !revokedDocs[doc.docHash])
-    : documents;
+  const visibleDocs = documents.filter(doc => !revokedDocs[doc.docHash]);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
   const fetchDocuments = async () => {
@@ -345,17 +342,6 @@ const AdminDashboard = () => {
         <div style={{ gridColumn: '1 / -1' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h3 style={{ margin: 0 }}>Certificates Issued by Me</h3>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <input 
-                type="checkbox" 
-                id="hideRevokedToggle" 
-                checked={hideRevoked} 
-                onChange={(e) => setHideRevoked(e.target.checked)} 
-              />
-              <label htmlFor="hideRevokedToggle" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                Hide Revoked Certificates
-              </label>
-            </div>
           </div>
           {loadingDocs ? (
             <div style={styles.list}>

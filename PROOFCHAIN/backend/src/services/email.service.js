@@ -79,6 +79,7 @@ const sendVerificationEmail = async (toEmail, documentName, docHash) => {
     return info;
   } catch (error) {
     console.error('Failed to send verification email:', error);
+    throw error;
   }
 };
 

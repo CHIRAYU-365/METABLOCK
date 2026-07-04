@@ -8,7 +8,7 @@ import { abstractHash } from '../utils/mask';
 import { getProvider, PROGRAM_ID, getDocumentPda, SOLANA_RPC_ENDPOINT } from '../utils/solana';
 import idl from '../utils/blockchain.json';
 import toast from 'react-hot-toast';
-import { Copy, ExternalLink, Check, QrCode } from 'lucide-react';
+import { Copy, ExternalLink, Check, QrCode, Mail } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Connection } from '@solana/web3.js';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -182,6 +182,18 @@ const AdminDashboard = () => {
     } catch (err) {
       console.error(err);
       toast.error("Failed to revoke: " + err.message);
+    }
+  };
+
+  const handleSendMail = async (docHash) => {
+    try {
+      const res = await axios.post(`${API_URL}/api/documents/${docHash}/send-email`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(res.data.message);
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.error || "Failed to send email");
     }
   };
 
@@ -418,6 +430,15 @@ const AdminDashboard = () => {
                     <a href={`https://gateway.pinata.cloud/ipfs/${doc.ipfsCid}`} target="_blank" rel="noreferrer" className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                       IPFS <ExternalLink size={14} />
                     </a>
+                    {!revokedDocs[doc.docHash] && (
+                      <button 
+                        onClick={() => handleSendMail(doc.docHash)}
+                        className="btn-outline" 
+                        style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem', borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' }}
+                      >
+                        <Mail size={14} /> Send as Mail
+                      </button>
+                    )}
                     {revokedDocs[doc.docHash] ? (
                       <span style={{ fontSize: '0.8rem', color: 'var(--error)', padding: '6px 12px' }}>Revoked</span>
                     ) : (

@@ -19,5 +19,6 @@ router.use(authenticateToken);
 router.post('/upload', requireRole(['ADMIN']), uploadLimiter, upload.single('file'), documentsController.upload);
 router.get('/', documentsController.getDocuments);
 router.get('/requests', requireRole(['ADMIN']), documentsController.getRequests);
+router.post('/:docHash/send-email', requireRole(['ADMIN']), documentsController.sendEmail);
 
 module.exports = router;

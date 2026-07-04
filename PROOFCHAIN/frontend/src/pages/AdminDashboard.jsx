@@ -16,8 +16,10 @@ import { analyzeDocument } from '../utils/aiService';
 
 const AdminDashboard = () => {
   const [documents, setDocuments] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [file, setFile] = useState(null);
   const [recipientEmail, setRecipientEmail] = useState('');
+  const [requireMultiSig, setRequireMultiSig] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [copied, setCopied] = useState(null);
@@ -30,10 +32,13 @@ const AdminDashboard = () => {
   const fetchDocuments = async () => {
     setLoadingDocs(true);
     try {
-      const res = await axios.get(`${API_URL}/api/documents`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setDocuments(res.data.issuedDocs || []);
+      const headers = { Authorization: `Bearer ${token}` };
+      const [docsRes, reqsRes] = await Promise.all([
+        axios.get(`${API_URL}/api/documents`, { headers }),
+        axios.get(`${API_URL}/api/documents/requests`, { headers }).catch(() => ({ data: { requests: [] } }))
+      ]);
+      setDocuments(docsRes.data.issuedDocs || []);
+      setRequests(reqsRes.data.requests || []);
     } catch (err) {
       console.error(err);
       toast.error("Failed to load documents");
@@ -65,6 +70,7 @@ const AdminDashboard = () => {
       formData.append('recipientEmail', recipientEmail);
       formData.append('aiDocType', aiMeta.docType);
       formData.append('aiKeywords', JSON.stringify(aiMeta.keywords));
+      formData.append('requireMultiSig', requireMultiSig);
 
       const res = await axios.post(`${API_URL}/api/documents/upload`, formData, {
         headers: { 
@@ -72,6 +78,15 @@ const AdminDashboard = () => {
           'Content-Type': 'multipart/form-data'
         }
       });
+      
+      if (res.data.requiresApproval) {
+        toast.success(res.data.message, { duration: 6000 });
+        setFile(null);
+        setRecipientEmail('');
+        setRequireMultiSig(false);
+        return;
+      }
+
       const ipfsCid = res.data.document.ipfsCid;
       const provider = getProvider(wallet);
       const program = new anchor.Program(idl, provider);
@@ -94,6 +109,7 @@ const AdminDashboard = () => {
       );
       setFile(null);
       setRecipientEmail('');
+      setRequireMultiSig(false);
       fetchDocuments();
     } catch (err) {
       console.error(err);
@@ -128,6 +144,37 @@ const AdminDashboard = () => {
     } catch (err) {
       console.error(err);
       toast.error("Failed to revoke: " + err.message);
+    }
+  };
+
+  const handleMintApprovedRequest = async (req) => {
+    if (!wallet.connected) return toast.error("Please connect your wallet first");
+    try {
+      const provider = getProvider(wallet);
+      const program = new anchor.Program(idl, provider);
+      const docHashBytes = Buffer.from(req.docHash, 'hex');
+      const documentRecordPda = anchor.web3.PublicKey.findProgramAddressSync(
+        [Buffer.from("document"), docHashBytes],
+        PROGRAM_ID
+      )[0];
+      const txId = await program.methods.registerDocument(Array.from(docHashBytes), req.ipfsCid).accounts({
+        documentRecord: documentRecordPda,
+        issuer: wallet.publicKey,
+        systemProgram: anchor.web3.SystemProgram.programId
+      }).rpc();
+      toast.success(
+        <div>
+          Multi-Sig Document successfully minted! <br/>
+          <a href={`https://explorer.solana.com/tx/${txId}?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899`} target="_blank" rel="noreferrer" style={{ textDecoration: 'underline', color: 'var(--accent-primary)' }}>View on Explorer</a>
+        </div>, 
+        { duration: 5000 }
+      );
+      
+      // Update backend to mark it ACTIVE or delete request to prevent re-minting (ignoring for simplicity, or just refresh)
+      fetchDocuments();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to mint: " + err.message);
     }
   };
 
@@ -180,6 +227,17 @@ const AdminDashboard = () => {
                 {file ? file.name : "Click or drag file to upload"}
               </div>
             </div>
+            <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input 
+                type="checkbox" 
+                id="multiSig" 
+                checked={requireMultiSig} 
+                onChange={(e) => setRequireMultiSig(e.target.checked)} 
+              />
+              <label htmlFor="multiSig" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                Require Multi-Signature (Super Admin Approval)
+              </label>
+            </div>
             <button 
               type="submit" 
               className="btn-primary" 
@@ -214,6 +272,39 @@ const AdminDashboard = () => {
           </div>
         )}
         
+        {/* Multi-Sig Requests */}
+        {requests.length > 0 && (
+          <div style={{ gridColumn: '1 / -1', marginBottom: '2rem' }}>
+            <h3 style={{ marginBottom: '1rem', color: 'var(--warning)' }}>Pending Multi-Sig Requests</h3>
+            <div style={styles.list}>
+              {requests.map(req => (
+                <div key={req.id} className="glass-panel" style={{...styles.listItem, borderLeft: req.status === 'APPROVED' ? '4px solid var(--success)' : '4px solid var(--warning)'}}>
+                  <div>
+                    <h4 style={{ color: 'var(--accent-secondary)' }}>{req.name}</h4>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginTop: '4px' }}>
+                      Owner: {req.ownerEmail}
+                    </span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginTop: '4px' }}>
+                      Status: <strong style={{ color: req.status === 'APPROVED' ? 'var(--success)' : req.status === 'REJECTED' ? 'var(--error)' : 'var(--warning)' }}>{req.status}</strong>
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    {req.status === 'APPROVED' && (
+                      <button 
+                        onClick={() => handleMintApprovedRequest(req)}
+                        className="btn-primary" 
+                        style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                      >
+                        Mint to Blockchain
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div style={{ gridColumn: '1 / -1' }}>
           <h3 style={{ marginBottom: '1rem' }}>Certificates Issued by Me</h3>
           {loadingDocs ? (

@@ -28,4 +28,7 @@ router.get('/audit', auditController.getAuditLogs);
 router.put('/users/:id/status', validate(statusUpdateSchema), adminController.updateStatus);
 router.put('/users/:id/role', validate(roleUpdateSchema), adminController.updateRole);
 
+router.get('/requests', adminController.getDocumentRequests);
+router.put('/requests/:id/status', validate(statusUpdateSchema), adminController.updateDocumentRequest);
+
 module.exports = router;

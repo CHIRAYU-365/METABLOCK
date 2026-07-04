@@ -11,5 +11,6 @@ router.use(authenticateToken);
 
 router.post('/upload', requireRole(['ADMIN']), upload.single('file'), documentsController.upload);
 router.get('/', documentsController.getDocuments);
+router.get('/requests', requireRole(['ADMIN']), documentsController.getRequests);
 
 module.exports = router;

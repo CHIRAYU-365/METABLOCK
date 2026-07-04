@@ -11,6 +11,7 @@ const SuperAdminDashboard = () => {
   const [chartData, setChartData] = useState([]);
   const [users, setUsers] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const { token, user } = useAuth();
   useEffect(() => {
@@ -21,15 +22,17 @@ const SuperAdminDashboard = () => {
     setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const [statsRes, usersRes, auditRes] = await Promise.all([
+      const [statsRes, usersRes, auditRes, requestsRes] = await Promise.all([
         axios.get(`${API_URL}/api/superadmin/dashboard`, { headers }),
         axios.get(`${API_URL}/api/superadmin/users`, { headers }),
-        axios.get(`${API_URL}/api/superadmin/audit`, { headers }).catch(() => ({ data: [] }))
+        axios.get(`${API_URL}/api/superadmin/audit`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/api/superadmin/requests`, { headers }).catch(() => ({ data: { requests: [] } }))
       ]);
       setStats(statsRes.data.stats);
       setChartData(statsRes.data.chartData || []);
       setUsers(usersRes.data.users);
       setAuditLogs(auditRes.data || []);
+      setRequests(requestsRes.data.requests || []);
     } catch (err) {
       console.error(err);
       toast.error("Failed to load admin data");
@@ -62,6 +65,20 @@ const SuperAdminDashboard = () => {
       toast.error("Failed to update role");
     }
   };
+
+  const updateRequestStatus = async (requestId, newStatus) => {
+    try {
+      await axios.put(`${API_URL}/api/superadmin/requests/${requestId}/status`, { status: newStatus }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(`Request status updated to ${newStatus}`);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update request");
+    }
+  };
+
   return (
     <div className="animate-fade-in">
       <div style={styles.header}>
@@ -126,6 +143,13 @@ const SuperAdminDashboard = () => {
             style={{ padding: '8px 16px', borderRadius: '8px' }}
           >
             Audit Logs
+          </button>
+          <button 
+            className={activeTab === 'requests' ? 'btn-primary' : 'btn-outline'} 
+            onClick={() => setActiveTab('requests')}
+            style={{ padding: '8px 16px', borderRadius: '8px' }}
+          >
+            Multi-Sig Requests
           </button>
         </div>
         
@@ -228,6 +252,58 @@ const SuperAdminDashboard = () => {
             </table>
             {auditLogs.length === 0 && (
               <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No audit logs found.</div>
+            )}
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Document</th>
+                  <th style={styles.th}>Issuer (Admin)</th>
+                  <th style={styles.th}>Status</th>
+                  <th style={styles.th}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {requests.map(req => (
+                  <tr key={req.id} style={styles.tr}>
+                    <td style={styles.td}>
+                      <div style={{ fontWeight: '500' }}>{req.name}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Owner: {req.ownerEmail}</div>
+                    </td>
+                    <td style={styles.td}>
+                      <div style={{ fontSize: '0.9rem' }}>{req.issuerEmail}</div>
+                    </td>
+                    <td style={styles.td}>
+                      <span style={{
+                        ...styles.statusBadge,
+                        backgroundColor: req.status === 'APPROVED' ? 'rgba(34, 197, 94, 0.2)' : 
+                                         req.status === 'PENDING' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                        color: req.status === 'APPROVED' ? 'var(--success)' : 
+                               req.status === 'PENDING' ? 'var(--warning)' : 'var(--error)'
+                      }}>
+                        {req.status}
+                      </span>
+                    </td>
+                    <td style={styles.td}>
+                      {req.status === 'PENDING' && (
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button onClick={() => updateRequestStatus(req.id, 'APPROVED')} className="btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
+                            Approve
+                          </button>
+                          <button onClick={() => updateRequestStatus(req.id, 'REJECTED')} className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', borderColor: 'var(--error)', color: 'var(--error)' }}>
+                            Reject
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {requests.length === 0 && (
+              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No multi-sig requests found.</div>
             )}
           </div>
         )}

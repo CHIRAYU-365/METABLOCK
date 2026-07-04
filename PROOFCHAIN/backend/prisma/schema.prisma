@@ -39,3 +39,17 @@ model AuditLog {
   ipAddress String?
   createdAt DateTime @default(now())
 }
+
+model DocumentRequest {
+  id             String   @id @default(uuid())
+  docHash        String   @unique
+  ipfsCid        String
+  name           String
+  ownerEmail     String
+  issuerId       String
+  issuerEmail    String
+  aiDocType      String?
+  aiKeywords     String?
+  status         String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt      DateTime @default(now())
+}

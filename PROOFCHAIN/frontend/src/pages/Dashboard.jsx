@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useWallet } from '@solana/wallet-adapter-react';
 import toast from 'react-hot-toast';
-import { Copy, ExternalLink, Check, QrCode } from 'lucide-react';
+import { Copy, ExternalLink, Check, QrCode, ShieldCheck } from 'lucide-react';
 import { abstractHash } from '../utils/mask';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -10,7 +11,9 @@ const Dashboard = () => {
   const [documents, setDocuments] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [copied, setCopied] = useState(null);
+  const [signedDocs, setSignedDocs] = useState({});
   const { token, user } = useAuth();
+  const wallet = useWallet();
   useEffect(() => {
     fetchDocuments();
   }, []);
@@ -34,6 +37,20 @@ const Dashboard = () => {
     setCopied(text);
     toast.success(`${type} copied to clipboard!`, { id: 'copy' });
     setTimeout(() => setCopied(null), 2000);
+  };
+
+  const handleSignOwnership = async (docHash) => {
+    if (!wallet.connected) return toast.error("Please connect your Phantom wallet first");
+    try {
+      const message = new TextEncoder().encode(`I verify ownership of document with hash: ${docHash}`);
+      const signature = await wallet.signMessage(message);
+      
+      setSignedDocs(prev => ({ ...prev, [docHash]: true }));
+      toast.success("Cryptographic signature verified successfully!", { duration: 4000 });
+    } catch (err) {
+      console.error(err);
+      toast.error("Signature failed or rejected");
+    }
   };
   return (
     <div className="animate-fade-in">
@@ -102,6 +119,15 @@ const Dashboard = () => {
                     <a href={`https://gateway.pinata.cloud/ipfs/${doc.ipfsCid}`} target="_blank" rel="noreferrer" className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                       View File <ExternalLink size={14} />
                     </a>
+                    {signedDocs[doc.docHash] ? (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--success)', fontSize: '0.8rem', padding: '6px 12px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px' }}>
+                        <ShieldCheck size={14} /> Verified
+                      </span>
+                    ) : (
+                      <button onClick={() => handleSignOwnership(doc.docHash)} className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' }}>
+                        Sign to Verify
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

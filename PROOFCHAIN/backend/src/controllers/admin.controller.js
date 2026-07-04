@@ -55,9 +55,27 @@ const updateRole = async (req, res) => {
   res.json({ message: "Role updated successfully", user: { id: user.id, role: user.role } });
 };
 
+const getDocumentRequests = async (req, res) => {
+  const requests = await prisma.documentRequest.findMany({
+    orderBy: { createdAt: 'desc' }
+  });
+  res.json({ requests });
+};
+
+const updateDocumentRequest = async (req, res) => {
+  const { status } = req.body;
+  const request = await prisma.documentRequest.update({
+    where: { id: req.params.id },
+    data: { status }
+  });
+  res.json({ message: "Request updated successfully", request });
+};
+
 module.exports = {
   getDashboardStats,
   getUsers,
   updateStatus,
-  updateRole
+  updateRole,
+  getDocumentRequests,
+  updateDocumentRequest
 };

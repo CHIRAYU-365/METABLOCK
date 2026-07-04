@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 const upload = async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
   
-  const { docHash, recipientEmail, aiDocType, aiKeywords } = req.body;
+  const { docHash, recipientEmail, aiDocType, aiKeywords, requireMultiSig } = req.body;
   if (!docHash) return res.status(400).json({ error: "Missing docHash from client" });
   if (!recipientEmail) return res.status(400).json({ error: "Missing recipientEmail" });
   
@@ -25,10 +25,34 @@ const upload = async (req, res) => {
 
   const ipfsCid = await uploadDocument(req.file.buffer, req.file.originalname, req.file.mimetype, metadata);
 
+  if (requireMultiSig === 'true') {
+    await prisma.documentRequest.create({
+      data: {
+        docHash,
+        ipfsCid,
+        name: req.file.originalname,
+        ownerEmail: recipient.email,
+        issuerId: req.user.id,
+        issuerEmail: req.user.email,
+        aiDocType: aiDocType || 'General',
+        aiKeywords: aiKeywords || '[]',
+        status: 'PENDING'
+      }
+    });
+    
+    await auditService.logAction(req.user.id, 'DOCUMENT_MULTISIG_REQUESTED', `Requested multi-sig for document ${req.file.originalname}`, req.ip);
+    
+    return res.status(201).json({
+      message: "Multi-signature requested successfully. Waiting for Super Admin approval.",
+      requiresApproval: true
+    });
+  }
+
   await auditService.logAction(req.user.id, 'DOCUMENT_UPLOADED', `Uploaded document ${req.file.originalname}`, req.ip);
 
   res.status(201).json({ 
     message: "Upload successful", 
+    requiresApproval: false,
     document: {
       name: req.file.originalname,
       ipfsCid,
@@ -74,7 +98,16 @@ const getDocuments = async (req, res) => {
   }
 };
 
+const getRequests = async (req, res) => {
+  const requests = await prisma.documentRequest.findMany({
+    where: { issuerId: req.user.id },
+    orderBy: { createdAt: 'desc' }
+  });
+  res.json({ requests });
+};
+
 module.exports = {
   upload,
-  getDocuments
+  getDocuments,
+  getRequests
 };

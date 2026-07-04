@@ -86,6 +86,7 @@ const SuperAdminDashboard = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success("Designation updated!");
+      setUsers(prevUsers => prevUsers.map(u => u.id === userId ? { ...u, designation: value } : u));
     } catch (err) {
       console.error(err);
       toast.error("Failed to update designation");

@@ -18,7 +18,8 @@ export const AuthProvider = ({ children }) => {
             username: decoded.username,
             email: decoded.email,
             role: decoded.role,
-            status: decoded.status
+            status: decoded.status,
+            designation: decoded.designation
           });
         }
       } catch (err) {

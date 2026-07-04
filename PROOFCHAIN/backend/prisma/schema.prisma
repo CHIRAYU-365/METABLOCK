@@ -38,6 +38,8 @@ model AuditLog {
   details   String?
   ipAddress String?
   createdAt DateTime @default(now())
+
+  @@index([userId, action])
 }
 
 model DocumentRequest {
@@ -53,4 +55,6 @@ model DocumentRequest {
   txData         String?
   status         String   @default("PENDING") // PENDING, APPROVED, REJECTED
   createdAt      DateTime @default(now())
+
+  @@index([issuerId, status])
 }

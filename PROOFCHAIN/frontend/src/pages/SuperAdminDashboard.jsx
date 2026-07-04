@@ -3,9 +3,12 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { Users, Shield, Clock } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+
 const SuperAdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('users');
   const [stats, setStats] = useState({ totalUsers: 0, totalAdmins: 0, pendingAdmins: 0 });
+  const [chartData, setChartData] = useState([]);
   const [users, setUsers] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +27,7 @@ const SuperAdminDashboard = () => {
         axios.get(`${API_URL}/api/superadmin/audit`, { headers }).catch(() => ({ data: [] }))
       ]);
       setStats(statsRes.data.stats);
+      setChartData(statsRes.data.chartData || []);
       setUsers(usersRes.data.users);
       setAuditLogs(auditRes.data || []);
     } catch (err) {
@@ -87,6 +91,26 @@ const SuperAdminDashboard = () => {
           </div>
         </div>
       </div>
+      
+      {chartData.length > 0 && (
+        <div className="glass-panel" style={{ marginTop: '2rem', padding: '2rem' }}>
+          <h3 style={{ marginBottom: '1.5rem' }}>User Growth Over Time</h3>
+          <div style={{ width: '100%', height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <XAxis dataKey="name" stroke="var(--text-secondary)" />
+                <YAxis stroke="var(--text-secondary)" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#121216', border: '1px solid var(--border-color)', borderRadius: '8px' }} 
+                  itemStyle={{ color: 'var(--accent-primary)' }} 
+                />
+                <Line type="monotone" dataKey="users" stroke="var(--accent-primary)" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
       <div className="glass-panel" style={{ marginTop: '2rem', padding: '2rem' }}>
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
           <button 

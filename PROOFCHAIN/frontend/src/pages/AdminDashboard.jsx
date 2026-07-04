@@ -10,6 +10,10 @@ import idl from '../utils/blockchain.json';
 import toast from 'react-hot-toast';
 import { Copy, ExternalLink, Check, QrCode } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import BulkUpload from '../components/BulkUpload';
+import { analyzeDocument } from '../utils/aiService';
+
 const AdminDashboard = () => {
   const [documents, setDocuments] = useState([]);
   const [file, setFile] = useState(null);
@@ -51,10 +55,17 @@ const AdminDashboard = () => {
     setUploading(true);
     try {
       const docHash = await calculateSHA256(file);
+      
+      // AI Document Analysis
+      const aiMeta = analyzeDocument(file.name);
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('docHash', docHash);
       formData.append('recipientEmail', recipientEmail);
+      formData.append('aiDocType', aiMeta.docType);
+      formData.append('aiKeywords', JSON.stringify(aiMeta.keywords));
+
       const res = await axios.post(`${API_URL}/api/documents/upload`, formData, {
         headers: { 
           Authorization: `Bearer ${token}`,
@@ -119,6 +130,20 @@ const AdminDashboard = () => {
       toast.error("Failed to revoke: " + err.message);
     }
   };
+
+  // Generate Chart Data from issued documents
+  const generateChartData = () => {
+    const dataMap = {};
+    documents.forEach(doc => {
+      const d = new Date(doc.timestamp);
+      // Fallback for missing timestamp or use current day for testing
+      const day = isNaN(d.getTime()) ? new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      dataMap[day] = (dataMap[day] || 0) + 1;
+    });
+    return Object.keys(dataMap).map(name => ({ name, documents: dataMap[name] }));
+  };
+  const chartData = generateChartData();
+
   return (
     <div className="animate-fade-in">
       <div style={styles.header}>
@@ -165,8 +190,31 @@ const AdminDashboard = () => {
             </button>
           </form>
         </div>
-        {}
-        <div>
+        
+        {/* Bulk Upload Component */}
+        <BulkUpload onComplete={fetchDocuments} />
+        
+        {/* Analytics Chart */}
+        {chartData.length > 0 && (
+          <div className="glass-panel" style={{ marginTop: '2rem', padding: '2rem', gridColumn: '1 / -1' }}>
+            <h3 style={{ marginBottom: '1.5rem' }}>Certificates Issued Over Time</h3>
+            <div style={{ width: '100%', height: 300 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <XAxis dataKey="name" stroke="var(--text-secondary)" />
+                  <YAxis stroke="var(--text-secondary)" allowDecimals={false} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#121216', border: '1px solid var(--border-color)', borderRadius: '8px' }} 
+                    itemStyle={{ color: 'var(--accent-primary)' }} 
+                  />
+                  <Line type="monotone" dataKey="documents" stroke="var(--accent-primary)" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+        
+        <div style={{ gridColumn: '1 / -1' }}>
           <h3 style={{ marginBottom: '1rem' }}>Certificates Issued by Me</h3>
           {loadingDocs ? (
             <div style={styles.list}>
@@ -208,6 +256,18 @@ const AdminDashboard = () => {
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginTop: '4px' }}>
                       Owner: {doc.ownerEmail}
                     </span>
+                    {(doc.aiDocType || doc.aiKeywords) && (
+                      <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(168, 85, 247, 0.2)', color: 'var(--accent-secondary)' }}>
+                          {doc.aiDocType || 'General'}
+                        </span>
+                        {doc.aiKeywords && doc.aiKeywords !== '[]' && JSON.parse(doc.aiKeywords).map((kw, i) => (
+                          <span key={i} style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.1)', color: 'var(--text-secondary)' }}>
+                            {kw}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>

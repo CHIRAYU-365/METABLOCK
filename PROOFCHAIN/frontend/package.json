@@ -9,6 +9,9 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.0",
     "@solana/wallet-adapter-base": "^0.9.23",
@@ -25,7 +28,9 @@
     "lucide-react": "^0.364.0",
     "react-hot-toast": "^2.4.1",
     "framer-motion": "^11.0.8",
-    "qrcode.react": "^3.1.0"
+    "qrcode.react": "^3.1.0",
+    "recharts": "^2.12.3",
+    "papaparse": "^5.4.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

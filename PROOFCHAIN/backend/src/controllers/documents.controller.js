@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 const upload = async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
   
-  const { docHash, recipientEmail } = req.body;
+  const { docHash, recipientEmail, aiDocType, aiKeywords } = req.body;
   if (!docHash) return res.status(400).json({ error: "Missing docHash from client" });
   if (!recipientEmail) return res.status(400).json({ error: "Missing recipientEmail" });
   
@@ -18,7 +18,9 @@ const upload = async (req, res) => {
     ownerEmail: recipient.email,
     issuerId: req.user.id,
     issuerEmail: req.user.email,
-    docHash: docHash
+    docHash: docHash,
+    aiDocType: aiDocType || 'General',
+    aiKeywords: aiKeywords || '[]'
   };
 
   const ipfsCid = await uploadDocument(req.file.buffer, req.file.originalname, req.file.mimetype, metadata);
@@ -45,6 +47,8 @@ const getDocuments = async (req, res) => {
       ipfsCid: file.ipfs_pin_hash,
       docHash: file.metadata.keyvalues.docHash,
       issuerEmail: file.metadata.keyvalues.issuerEmail,
+      aiDocType: file.metadata.keyvalues.aiDocType,
+      aiKeywords: file.metadata.keyvalues.aiKeywords,
       createdAt: file.date_pinned
     }));
     return res.json({ myDocs });
@@ -58,6 +62,8 @@ const getDocuments = async (req, res) => {
       ipfsCid: file.ipfs_pin_hash,
       docHash: file.metadata.keyvalues.docHash,
       ownerEmail: file.metadata.keyvalues.ownerEmail,
+      aiDocType: file.metadata.keyvalues.aiDocType,
+      aiKeywords: file.metadata.keyvalues.aiKeywords,
       createdAt: file.date_pinned
     }));
     return res.json({ issuedDocs });

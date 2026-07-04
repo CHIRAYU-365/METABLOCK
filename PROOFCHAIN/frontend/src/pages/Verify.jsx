@@ -37,7 +37,7 @@ const Verify = () => {
         return;
       }
 
-      // Reconstruct proof inputs
+      
       const disclosedFields = {};
       const disclosedSalts = {};
       const hiddenFieldHashes = {};
@@ -61,7 +61,7 @@ const Verify = () => {
         return;
       }
 
-      // Verify root hash against blockchain
+      
       const pda = getDocumentPda(rootHash);
       const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
       const accountInfo = await connection.getAccountInfo(pda);

@@ -57,7 +57,7 @@ const upload = async (req, res) => {
 
   await auditService.logAction(req.user.id, 'DOCUMENT_UPLOADED', `Uploaded document ${req.file.originalname}`, req.ip);
 
-  // Send verification email asynchronously
+  
   emailService.sendVerificationEmail(recipient.email, req.file.originalname, docHash).catch(console.error);
 
   res.status(201).json({ 

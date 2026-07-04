@@ -85,6 +85,7 @@ blockchain/.anchor/
 .gemini/
 .agents/
 remove_comments.js
+strip_comments.js
 seed_superadmin.js
 
 # Application Logs

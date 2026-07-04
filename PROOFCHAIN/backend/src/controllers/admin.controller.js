@@ -7,10 +7,10 @@ const getDashboardStats = async (req, res) => {
   const totalAdmins = await prisma.user.count({ where: { role: 'ADMIN' } });
   const pendingAdmins = await prisma.user.count({ where: { role: 'ADMIN', status: 'PENDING' } });
   
-  // Aggregate user growth for chart (mocking months based on current users for simplicity)
+  
   const users = await prisma.user.findMany({ select: { createdAt: true } });
   
-  // Group by month
+  
   const growthMap = {};
   users.forEach(u => {
     const month = new Date(u.createdAt).toLocaleString('default', { month: 'short' });
@@ -22,7 +22,7 @@ const getDashboardStats = async (req, res) => {
     users: growthMap[name]
   }));
 
-  // Ensure there's at least some mock data if brand new
+  
   if (chartData.length === 0) {
     chartData.push({ name: 'Jan', users: 0 }, { name: 'Feb', users: 0 });
   }

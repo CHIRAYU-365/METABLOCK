@@ -98,7 +98,7 @@ const AdminDashboard = () => {
     try {
       const docHash = await calculateSHA256(file);
       
-      // AI Document Analysis
+      
       const aiMeta = analyzeDocument(file.name);
 
       const formData = new FormData();
@@ -207,7 +207,7 @@ const AdminDashboard = () => {
         { duration: 5000 }
       );
       
-      // Update backend to mark it ACTIVE or delete request to prevent re-minting (ignoring for simplicity, or just refresh)
+      
       fetchDocuments();
     } catch (err) {
       console.error(err);
@@ -215,12 +215,12 @@ const AdminDashboard = () => {
     }
   };
 
-  // Generate Chart Data from issued documents
+  
   const generateChartData = () => {
     const dataMap = {};
     documents.forEach(doc => {
       const d = new Date(doc.timestamp);
-      // Fallback for missing timestamp or use current day for testing
+      
       const day = isNaN(d.getTime()) ? new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       dataMap[day] = (dataMap[day] || 0) + 1;
     });
@@ -286,10 +286,10 @@ const AdminDashboard = () => {
           </form>
         </div>
         
-        {/* Bulk Upload Component */}
+        {}
         <BulkUpload onComplete={fetchDocuments} />
         
-        {/* Analytics Chart */}
+        {}
         {chartData.length > 0 && (
           <div className="glass-panel" style={{ marginTop: '2rem', padding: '2rem', gridColumn: '1 / -1' }}>
             <h3 style={{ marginBottom: '1.5rem' }}>Certificates Issued Over Time</h3>
@@ -309,7 +309,7 @@ const AdminDashboard = () => {
           </div>
         )}
         
-        {/* Multi-Sig Requests */}
+        {}
         {requests.length > 0 && (
           <div style={{ gridColumn: '1 / -1', marginBottom: '2rem' }}>
             <h3 style={{ marginBottom: '1rem', color: 'var(--warning)' }}>Pending Multi-Sig Requests</h3>

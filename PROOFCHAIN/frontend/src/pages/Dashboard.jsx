@@ -142,7 +142,7 @@ const Dashboard = () => {
                   </div>
                 </div>
                 
-                {/* Expanded Certificate & ZK Panel */}
+                {}
                 {selectedDocId === doc.id && (
                   <div className="glass-panel" style={{ marginTop: '1rem', padding: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', animation: 'fade-in 0.3s' }}>
                     <div>

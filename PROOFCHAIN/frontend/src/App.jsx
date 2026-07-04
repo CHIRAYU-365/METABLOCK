@@ -11,7 +11,7 @@ import { AnimatePresence } from 'framer-motion';
 import Loader from './components/Loader';
 import PageTransition from './components/PageTransition';
 
-// Lazy load pages for massive performance boost
+
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const SuperAdminDashboard = lazy(() => import('./pages/SuperAdminDashboard'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));

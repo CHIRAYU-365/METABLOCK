@@ -40,10 +40,10 @@ const BulkUpload = ({ onComplete }) => {
     let failedCount = 0;
     const errors = [];
 
-    // Process one by one (to not overwhelm the blockchain/backend rate limits)
+    
     for (let i = 0; i < csvData.length; i++) {
       const row = csvData[i];
-      // Expecting columns: Name, OwnerEmail
+      
       if (!row.Name || !row.OwnerEmail) {
         failedCount++;
         errors.push(`Row ${i + 1}: Missing Name or OwnerEmail`);
@@ -51,7 +51,7 @@ const BulkUpload = ({ onComplete }) => {
       }
 
       try {
-        // Creating a dummy file for the bulk issuance, simulating an actual document
+        
         const blob = new Blob([`Bulk Issued Certificate for ${row.Name} (${row.OwnerEmail})\nIssued Date: ${new Date().toISOString()}`], { type: 'text/plain' });
         const dummyFile = new File([blob], `${row.Name.replace(/\s+/g, '_')}_Certificate.txt`, { type: 'text/plain' });
         

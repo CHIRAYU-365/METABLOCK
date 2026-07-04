@@ -14,7 +14,7 @@ const createTransporter = async () => {
       auth: { user, pass }
     });
   } else {
-    // Generate ethereal test account dynamically on-the-fly
+    
     const testAccount = await nodemailer.createTestAccount();
     return nodemailer.createTransport({
       host: 'smtp.ethereal.email',

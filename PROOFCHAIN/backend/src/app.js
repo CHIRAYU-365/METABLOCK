@@ -1,5 +1,5 @@
 require('dotenv').config();
-require('express-async-errors'); // Catches unhandled errors in async routes automatically
+require('express-async-errors'); 
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -30,7 +30,7 @@ app.use(cors({
   }
 }));
 
-// CIA: Confidentiality - Strict Security Headers (CSP & HSTS)
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -47,21 +47,21 @@ app.use(helmet({
   hsts: { maxAge: 31536000, includeSubDomains: true, preload: true }
 }));
 
-// Body parsing
-app.use(express.json({ limit: '10kb' })); // CIA: Availability - Prevent large payloads
 
-// CIA: Integrity - Prevent XSS and HTTP Parameter Pollution
+app.use(express.json({ limit: '10kb' })); 
+
+
 app.use(xss());
 app.use(hpp());
 
-// CIA: Availability - Strict Rate Limiting on Auth to prevent brute force
+
 const authLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 10, // Limit each IP to 10 login/register requests per windowMs
+  windowMs: 5 * 60 * 1000, 
+  max: 10, 
   message: 'Too many authentication attempts from this IP, please try again after 5 minutes.'
 });
 
-// Set up morgan to use our winston logger
+
 const morganFormat = process.env.NODE_ENV !== 'production' ? 'dev' : 'combined';
 app.use(morgan(morganFormat, { stream: { write: message => logger.info(message.trim()) } }));
 
@@ -69,12 +69,12 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', uptime: process.uptime() });
 });
 
-// API Routes
+
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/superadmin', adminRoutes);
 app.use('/api/documents', documentsRoutes);
 
-// Global Error Handler
+
 app.use(errorMiddleware);
 
 module.exports = app;

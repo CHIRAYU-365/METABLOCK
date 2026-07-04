@@ -16,7 +16,7 @@ const ZKSelector = ({ doc }) => {
   const generateProof = async () => {
     const fields = {
       name: doc.name,
-      ownerEmail: doc.ownerEmail || doc.issuerEmail || 'N/A', // fallback
+      ownerEmail: doc.ownerEmail || doc.issuerEmail || 'N/A', 
       aiDocType: doc.aiDocType || 'General',
       ipfsCid: doc.ipfsCid
     };
@@ -38,9 +38,9 @@ const ZKSelector = ({ doc }) => {
 
     const params = new URLSearchParams();
     params.set('zk', 'true');
-    params.set('root', doc.docHash); // Using the docHash as the blockchain root hash anchor
+    params.set('root', doc.docHash); 
 
-    // Add disclosed fields and salts
+    
     const fields = {
       name: doc.name,
       ownerEmail: doc.ownerEmail || doc.issuerEmail || 'N/A',

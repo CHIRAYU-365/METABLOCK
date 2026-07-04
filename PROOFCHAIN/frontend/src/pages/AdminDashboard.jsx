@@ -186,13 +186,20 @@ const AdminDashboard = () => {
   };
 
   const handleSendMail = async (docHash) => {
+    console.log("handleSendMail triggered with docHash:", docHash);
     try {
+      if (!docHash) {
+        console.error("No docHash provided to handleSendMail");
+        toast.error("Error: Document hash is missing.");
+        return;
+      }
       const res = await axios.post(`${API_URL}/api/documents/${docHash}/send-email`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      console.log("Email API response success:", res.data);
       toast.success(res.data.message);
     } catch (err) {
-      console.error(err);
+      console.error("handleSendMail failed:", err);
       toast.error(err.response?.data?.error || "Failed to send email");
     }
   };

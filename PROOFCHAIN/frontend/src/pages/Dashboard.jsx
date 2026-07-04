@@ -3,15 +3,18 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '@solana/wallet-adapter-react';
 import toast from 'react-hot-toast';
-import { Copy, ExternalLink, Check, QrCode, ShieldCheck } from 'lucide-react';
+import { Copy, ExternalLink, Check, QrCode, ShieldCheck, Award } from 'lucide-react';
 import { abstractHash } from '../utils/mask';
 import { QRCodeSVG } from 'qrcode.react';
+import CertificateCanvas from '../components/CertificateCanvas';
+import ZKSelector from '../components/ZKSelector';
 
 const Dashboard = () => {
   const [documents, setDocuments] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [copied, setCopied] = useState(null);
   const [signedDocs, setSignedDocs] = useState({});
+  const [selectedDocId, setSelectedDocId] = useState(null);
   const { token, user } = useAuth();
   const wallet = useWallet();
   useEffect(() => {
@@ -74,7 +77,8 @@ const Dashboard = () => {
           ) : (
             <div style={styles.list}>
               {documents.map(doc => (
-                <div key={doc.id} className="glass-panel" style={styles.listItem}>
+                <React.Fragment key={doc.id}>
+                <div className="glass-panel" style={styles.listItem}>
                   <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
                     <div style={{ background: '#fff', padding: '0.5rem', borderRadius: '8px' }}>
                       <QRCodeSVG 
@@ -116,6 +120,13 @@ const Dashboard = () => {
                   </div>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <button 
+                      onClick={() => setSelectedDocId(selectedDocId === doc.id ? null : doc.id)} 
+                      className="btn-outline" 
+                      style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem', borderColor: 'var(--accent-secondary)', color: 'var(--accent-secondary)' }}
+                    >
+                      <Award size={14} /> Certificate & ZK
+                    </button>
                     <a href={`https://gateway.pinata.cloud/ipfs/${doc.ipfsCid}`} target="_blank" rel="noreferrer" className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                       View File <ExternalLink size={14} />
                     </a>
@@ -130,6 +141,20 @@ const Dashboard = () => {
                     )}
                   </div>
                 </div>
+                
+                {/* Expanded Certificate & ZK Panel */}
+                {selectedDocId === doc.id && (
+                  <div className="glass-panel" style={{ marginTop: '1rem', padding: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', animation: 'fade-in 0.3s' }}>
+                    <div>
+                      <h4 style={{ marginBottom: '1rem' }}>Off-Chain Verifiable Certificate</h4>
+                      <CertificateCanvas doc={doc} />
+                    </div>
+                    <div>
+                      <ZKSelector doc={doc} />
+                    </div>
+                  </div>
+                )}
+                </React.Fragment>
               ))}
             </div>
           )}

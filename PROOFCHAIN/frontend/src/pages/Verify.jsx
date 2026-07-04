@@ -5,7 +5,9 @@ import { calculateSHA256 } from '../utils/hash';
 import { abstractHash } from '../utils/mask';
 import { getDocumentPda, SOLANA_RPC_ENDPOINT } from '../utils/solana';
 import toast from 'react-hot-toast';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, ShieldCheck, EyeOff } from 'lucide-react';
+import { verifySelectiveDisclosure } from '../utils/zkProof';
+
 const Verify = () => {
   const [file, setFile] = useState(null);
   const [verifying, setVerifying] = useState(false);
@@ -15,11 +17,82 @@ const Verify = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
+    const zk = params.get('zk');
     const hashParam = params.get('hash');
-    if (hashParam) {
+    
+    if (zk === 'true') {
+      verifyZkProof(params);
+    } else if (hashParam) {
       verifyByHash(hashParam);
     }
   }, [location.search]);
+
+  const verifyZkProof = async (params) => {
+    setVerifying(true);
+    setResult(null);
+    try {
+      const rootHash = params.get('root');
+      if (!rootHash) {
+        setResult({ status: 'ERROR', message: 'Missing ZK Root Hash parameter.' });
+        return;
+      }
+
+      // Reconstruct proof inputs
+      const disclosedFields = {};
+      const disclosedSalts = {};
+      const hiddenFieldHashes = {};
+      const fields = ['name', 'ownerEmail', 'aiDocType', 'ipfsCid'];
+
+      fields.forEach(f => {
+        const val = params.get(`df_${f}`);
+        const salt = params.get(`ds_${f}`);
+        const hash = params.get(`hh_${f}`);
+        if (val !== null) {
+          disclosedFields[f] = val;
+          disclosedSalts[f] = salt;
+        } else if (hash !== null) {
+          hiddenFieldHashes[f] = hash;
+        }
+      });
+
+      const isZkValid = await verifySelectiveDisclosure(rootHash, disclosedFields, disclosedSalts, hiddenFieldHashes);
+      if (!isZkValid) {
+        setResult({ status: 'FAKE', message: 'ZK selective disclosure proof fails validation. The data was tampered with.', hash: rootHash });
+        return;
+      }
+
+      // Verify root hash against blockchain
+      const pda = getDocumentPda(rootHash);
+      const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
+      const accountInfo = await connection.getAccountInfo(pda);
+
+      if (!accountInfo) {
+        setResult({ status: 'FAKE', message: 'ZK proof matches local calculations, but root hash is not registered on Solana.', hash: rootHash });
+        return;
+      }
+
+      const data = accountInfo.data;
+      const isRevoked = data[data.length - 2] === 1;
+
+      if (isRevoked) {
+        setResult({ status: 'REVOKED', message: 'This credential was revoked by the issuer on-chain.', hash: rootHash });
+      } else {
+        setResult({
+          status: 'AUTHENTIC',
+          isZk: true,
+          disclosedFields,
+          hiddenFieldHashes,
+          message: 'ZK Cryptographic Proof and Solana ledger record are both fully authentic!',
+          hash: rootHash
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      setResult({ status: 'ERROR', message: 'Verification error during ZK processing.' });
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   const verifyByHash = async (docHashHex) => {
     setVerifying(true);
@@ -117,11 +190,36 @@ const Verify = () => {
             result.status === 'FAKE' ? styles.fake : 
             result.status === 'REVOKED' ? styles.revoked : styles.error
           )}}>
-            <h3 style={{ marginBottom: '0.5rem' }}>Status: {result.status}</h3>
-            <p>{result.message}</p>
+            <h3 style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <ShieldCheck size={20} /> Status: {result.status}
+            </h3>
+            <p style={{ marginBottom: '1rem' }}>{result.message}</p>
+            
+            {result.isZk && (
+              <div style={{ backgroundColor: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', marginTop: '1rem', border: '1px solid var(--border-color)' }}>
+                <h4 style={{ marginBottom: '0.75rem', color: '#fff', fontSize: '0.9rem' }}>Disclosed Claims (Selective Disclosure)</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {Object.keys(result.disclosedFields).map(k => (
+                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                      <span style={{ textTransform: 'capitalize', color: 'var(--text-secondary)' }}>{k.replace('ai', 'AI ')}:</span>
+                      <span style={{ color: '#fff', fontWeight: '500' }}>{result.disclosedFields[k]}</span>
+                    </div>
+                  ))}
+                  {Object.keys(result.hiddenFieldHashes).map(k => (
+                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', opacity: 0.7 }}>
+                      <span style={{ textTransform: 'capitalize', color: 'var(--text-secondary)' }}>{k.replace('ai', 'AI ')}:</span>
+                      <span style={{ color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <EyeOff size={12} /> Cryptographically Hidden
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {result.hash && (
               <div style={{ marginTop: '1rem', fontSize: '0.8rem', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '0.5rem', wordBreak: 'break-all' }}>
-                <span>SHA-256: {abstractHash(result.hash, 8, 8)}</span>
+                <span>Root SHA-256: {abstractHash(result.hash, 8, 8)}</span>
                 <button onClick={() => copyToClipboard(result.hash)} style={{ background: 'transparent', color: copied === result.hash ? 'var(--success)' : 'inherit' }}>
                   {copied === result.hash ? <Check size={14} /> : <Copy size={14} />}
                 </button>

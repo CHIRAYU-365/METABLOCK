@@ -50,6 +50,7 @@ model DocumentRequest {
   issuerEmail    String
   aiDocType      String?
   aiKeywords     String?
+  txData         String?
   status         String   @default("PENDING") // PENDING, APPROVED, REJECTED
   createdAt      DateTime @default(now())
 }

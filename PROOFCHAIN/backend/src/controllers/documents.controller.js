@@ -1,12 +1,13 @@
 const { PrismaClient } = require('@prisma/client');
 const { uploadDocument, listDocumentsByKeyValue } = require('../services/pinata.service');
 const auditService = require('../services/audit.service');
+const emailService = require('../services/email.service');
 const prisma = new PrismaClient();
 
 const upload = async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
   
-  const { docHash, recipientEmail, aiDocType, aiKeywords, requireMultiSig } = req.body;
+  const { docHash, recipientEmail, aiDocType, aiKeywords, requireMultiSig, txData } = req.body;
   if (!docHash) return res.status(400).json({ error: "Missing docHash from client" });
   if (!recipientEmail) return res.status(400).json({ error: "Missing recipientEmail" });
   
@@ -36,6 +37,7 @@ const upload = async (req, res) => {
         issuerEmail: req.user.email,
         aiDocType: aiDocType || 'General',
         aiKeywords: aiKeywords || '[]',
+        txData: txData || null,
         status: 'PENDING'
       }
     });
@@ -49,6 +51,9 @@ const upload = async (req, res) => {
   }
 
   await auditService.logAction(req.user.id, 'DOCUMENT_UPLOADED', `Uploaded document ${req.file.originalname}`, req.ip);
+
+  // Send verification email asynchronously
+  emailService.sendVerificationEmail(recipient.email, req.file.originalname, docHash).catch(console.error);
 
   res.status(201).json({ 
     message: "Upload successful", 

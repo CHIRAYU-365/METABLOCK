@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const emailService = require('../services/email.service');
 const prisma = new PrismaClient();
 
 const getDashboardStats = async (req, res) => {
@@ -68,6 +69,11 @@ const updateDocumentRequest = async (req, res) => {
     where: { id: req.params.id },
     data: { status }
   });
+
+  if (status === 'APPROVED') {
+    emailService.sendVerificationEmail(request.ownerEmail, request.name, request.docHash).catch(console.error);
+  }
+
   res.json({ message: "Request updated successfully", request });
 };
 

@@ -414,8 +414,8 @@ const SuperAdminDashboard = () => {
                             {rec.role}
                           </span>
                         </td>
-                        <td style={styles.td} style={{ fontSize: '0.85rem' }}>{rec.loginTime}</td>
-                        <td style={styles.td} style={{ fontSize: '0.85rem', color: rec.logoutTime.includes('Active') ? 'var(--warning)' : 'inherit' }}>
+                        <td style={{ ...styles.td, fontSize: '0.85rem' }}>{rec.loginTime}</td>
+                        <td style={{ ...styles.td, fontSize: '0.85rem', color: rec.logoutTime.includes('Active') ? 'var(--warning)' : 'inherit' }}>
                           {rec.logoutTime}
                         </td>
                       </tr>

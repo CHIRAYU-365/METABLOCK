@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "ProofChain Workspace Manager",
   "scripts": {
+    "start": "npm --prefix backend start",
     "install:all": "npm install && npm --prefix backend install && npm --prefix frontend install --legacy-peer-deps",
     "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"bgBlue.bold,bgMagenta.bold\" \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:all": "concurrently -n \"SOLANA,ANCHOR,BACKEND,FRONTEND\" -c \"bgGreen.bold,bgYellow.bold,bgBlue.bold,bgMagenta.bold\" \"solana-test-validator --ledger ~/test-ledger --reset\" \"bash -c 'echo \\\"Waiting for Solana validator...\\\" && until curl -s http://127.0.0.1:8899 > /dev/null; do sleep 1; done && echo \\\"Solana validator is ready! Deploying Anchor program...\\\" && cd blockchain && anchor build && anchor deploy'\" \"npm run dev:backend\" \"npm run dev:frontend\"",

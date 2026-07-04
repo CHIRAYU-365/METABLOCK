@@ -218,7 +218,7 @@ const SuperAdminDashboard = () => {
               </tbody>
             </table>
           </div>
-        ) : (
+        ) : activeTab === 'audit' ? (
           <div style={{ overflowX: 'auto' }}>
             <table style={styles.table}>
               <thead>

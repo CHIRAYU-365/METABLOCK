@@ -91,3 +91,20 @@ seed_superadmin.js
 logs/
 backend/logs/
 *.log
+
+# Build Caches & Tooling Caches
+.rolldown/
+.parcel-cache/
+.eslintcache
+.cache/
+.vite/
+.rollup.cache/
+.swc/
+.turbo/
+.vercel/
+.netlify/
+dist-ssr/
+
+# Local Dev Wallet Configuration
+*local-wallet.json
+

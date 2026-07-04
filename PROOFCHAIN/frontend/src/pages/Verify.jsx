@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Connection } from '@solana/web3.js';
 import { calculateSHA256 } from '../utils/hash';
 import { abstractHash } from '../utils/mask';
@@ -10,6 +11,42 @@ const Verify = () => {
   const [verifying, setVerifying] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(null);
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const hashParam = params.get('hash');
+    if (hashParam) {
+      verifyByHash(hashParam);
+    }
+  }, [location.search]);
+
+  const verifyByHash = async (docHashHex) => {
+    setVerifying(true);
+    setResult(null);
+    try {
+      const pda = getDocumentPda(docHashHex);
+      const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
+      const accountInfo = await connection.getAccountInfo(pda);
+      if (!accountInfo) {
+        setResult({ status: 'FAKE', message: 'Document tampered or not found on blockchain.', hash: docHashHex });
+        return;
+      }
+      const data = accountInfo.data;
+      const isRevoked = data[data.length - 2] === 1; 
+      if (isRevoked) {
+        setResult({ status: 'REVOKED', message: 'Document was revoked by the issuer.', hash: docHashHex });
+      } else {
+        setResult({ status: 'AUTHENTIC', message: 'Cryptographic proof verified on Solana.', hash: docHashHex });
+      }
+    } catch (err) {
+      console.error(err);
+      setResult({ status: 'ERROR', message: 'Verification error' });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
     setCopied(text);

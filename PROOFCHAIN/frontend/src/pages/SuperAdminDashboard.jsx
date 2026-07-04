@@ -4,8 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { Users, Shield, Clock } from 'lucide-react';
 const SuperAdminDashboard = () => {
+  const [activeTab, setActiveTab] = useState('users');
   const [stats, setStats] = useState({ totalUsers: 0, totalAdmins: 0, pendingAdmins: 0 });
   const [users, setUsers] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const { token, user } = useAuth();
   useEffect(() => {
@@ -16,12 +18,14 @@ const SuperAdminDashboard = () => {
     setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const [statsRes, usersRes] = await Promise.all([
+      const [statsRes, usersRes, auditRes] = await Promise.all([
         axios.get(`${API_URL}/api/superadmin/dashboard`, { headers }),
-        axios.get(`${API_URL}/api/superadmin/users`, { headers })
+        axios.get(`${API_URL}/api/superadmin/users`, { headers }),
+        axios.get(`${API_URL}/api/superadmin/audit`, { headers }).catch(() => ({ data: [] }))
       ]);
       setStats(statsRes.data.stats);
       setUsers(usersRes.data.users);
+      setAuditLogs(auditRes.data || []);
     } catch (err) {
       console.error(err);
       toast.error("Failed to load admin data");
@@ -84,10 +88,26 @@ const SuperAdminDashboard = () => {
         </div>
       </div>
       <div className="glass-panel" style={{ marginTop: '2rem', padding: '2rem' }}>
-        <h3 style={{ marginBottom: '1.5rem' }}>Platform Users</h3>
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+          <button 
+            className={activeTab === 'users' ? 'btn-primary' : 'btn-outline'} 
+            onClick={() => setActiveTab('users')}
+            style={{ padding: '8px 16px', borderRadius: '8px' }}
+          >
+            Platform Users
+          </button>
+          <button 
+            className={activeTab === 'audit' ? 'btn-primary' : 'btn-outline'} 
+            onClick={() => setActiveTab('audit')}
+            style={{ padding: '8px 16px', borderRadius: '8px' }}
+          >
+            Audit Logs
+          </button>
+        </div>
+        
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>Loading users...</div>
-        ) : (
+          <div style={{ textAlign: 'center', padding: '2rem' }}>Loading data...</div>
+        ) : activeTab === 'users' ? (
           <div style={{ overflowX: 'auto' }}>
             <table style={styles.table}>
               <thead>
@@ -149,6 +169,42 @@ const SuperAdminDashboard = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Timestamp</th>
+                  <th style={styles.th}>Action</th>
+                  <th style={styles.th}>Details</th>
+                  <th style={styles.th}>IP Address</th>
+                </tr>
+              </thead>
+              <tbody>
+                {auditLogs.map(log => (
+                  <tr key={log.id} style={styles.tr}>
+                    <td style={styles.td}>
+                      <div style={{ fontSize: '0.85rem' }}>{new Date(log.createdAt).toLocaleString()}</div>
+                    </td>
+                    <td style={styles.td}>
+                      <span style={{...styles.statusBadge, backgroundColor: 'rgba(99, 102, 241, 0.2)', color: 'var(--primary)'}}>
+                        {log.action}
+                      </span>
+                    </td>
+                    <td style={styles.td}>
+                      <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{log.details}</div>
+                    </td>
+                    <td style={styles.td}>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{log.ipAddress || 'Unknown'}</div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {auditLogs.length === 0 && (
+              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No audit logs found.</div>
+            )}
           </div>
         )}
       </div>

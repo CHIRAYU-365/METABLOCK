@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const auditService = require('../services/audit.service');
 
 const prisma = new PrismaClient();
 
@@ -25,6 +26,8 @@ const register = async (req, res) => {
     }
   });
   
+  await auditService.logAction(newUser.id, 'USER_REGISTERED', `User registered with email ${email}`, req.ip);
+
   res.status(201).json({ message: "User registered successfully", role: newUser.role, status: newUser.status });
 };
 
@@ -47,6 +50,8 @@ const login = async (req, res) => {
     { expiresIn: '24h' }
   );
   
+  await auditService.logAction(user.id, 'USER_LOGGED_IN', `User logged in`, req.ip);
+
   res.json({ 
     token, 
     user: { id: user.id, username: user.username, email: user.email, role: user.role, status: user.status } 

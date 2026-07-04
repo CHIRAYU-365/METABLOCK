@@ -3,20 +3,25 @@ import React from 'react';
 const Loader = () => {
   return (
     <div style={styles.container}>
-      <div className="spinner"></div>
-      <p style={styles.text}>Decrypting...</p>
+      <img src="/logo.png" alt="Decrypting..." className="technical-logo" />
+      <p style={styles.text}>Decrypting Data...</p>
       <style>{`
-        .spinner {
-          width: 50px;
-          height: 50px;
-          border: 4px solid rgba(168, 85, 247, 0.2);
-          border-top: 4px solid var(--accent-primary);
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
+        .technical-logo {
+          width: 80px;
+          height: 80px;
+          object-fit: contain;
+          animation: pulseAndGlow 2s ease-in-out infinite alternate;
+          filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.5));
         }
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+        @keyframes pulseAndGlow {
+          0% {
+            transform: scale(0.95);
+            filter: drop-shadow(0 0 5px rgba(168, 85, 247, 0.3));
+          }
+          100% {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.8));
+          }
         }
       `}</style>
     </div>

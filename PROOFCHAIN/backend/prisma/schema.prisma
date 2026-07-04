@@ -30,3 +30,12 @@ model User {
   status       Status   @default(ACTIVE)
   createdAt    DateTime @default(now())
 }
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  details   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+}

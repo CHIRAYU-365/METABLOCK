@@ -1,0 +1,15 @@
+{
+  "short_name": "ProofChain",
+  "name": "ProofChain Verification",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#a855f7",
+  "background_color": "#0d0d12"
+}

@@ -8,7 +8,8 @@ import { abstractHash } from '../utils/mask';
 import { getProvider, PROGRAM_ID } from '../utils/solana';
 import idl from '../utils/blockchain.json';
 import toast from 'react-hot-toast';
-import { Copy, ExternalLink, Check } from 'lucide-react';
+import { Copy, ExternalLink, Check, QrCode } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 const AdminDashboard = () => {
   const [documents, setDocuments] = useState([]);
   const [file, setFile] = useState(null);
@@ -181,8 +182,17 @@ const AdminDashboard = () => {
             <div style={styles.list}>
               {documents.map(doc => (
                 <div key={doc.id} className="glass-panel" style={styles.listItem}>
-                  <div>
-                    <h4 style={{ color: 'var(--accent-secondary)' }}>{doc.name}</h4>
+                  <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                    <div style={{ background: '#fff', padding: '0.5rem', borderRadius: '8px' }}>
+                      <QRCodeSVG 
+                        value={`${window.location.origin}/verify?hash=${doc.docHash}`} 
+                        size={80} 
+                        bgColor={"#ffffff"}
+                        fgColor={"#000000"}
+                      />
+                    </div>
+                    <div>
+                      <h4 style={{ color: 'var(--accent-secondary)' }}>{doc.name}</h4>
                     <div style={styles.hash}>
                       Hash: {abstractHash(doc.docHash)}
                       <button onClick={() => copyToClipboard(doc.docHash, 'Hash')} style={{ background: 'transparent', color: copied === doc.docHash ? 'var(--success)' : 'inherit' }}>
@@ -198,6 +208,7 @@ const AdminDashboard = () => {
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginTop: '4px' }}>
                       Owner: {doc.ownerEmail}
                     </span>
+                  </div>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                     <a href={`https://gateway.pinata.cloud/ipfs/${doc.ipfsCid}`} target="_blank" rel="noreferrer" className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>

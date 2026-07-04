@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { uploadDocument, listDocumentsByKeyValue } = require('../services/pinata.service');
+const auditService = require('../services/audit.service');
 const prisma = new PrismaClient();
 
 const upload = async (req, res) => {
@@ -21,6 +22,8 @@ const upload = async (req, res) => {
   };
 
   const ipfsCid = await uploadDocument(req.file.buffer, req.file.originalname, req.file.mimetype, metadata);
+
+  await auditService.logAction(req.user.id, 'DOCUMENT_UPLOADED', `Uploaded document ${req.file.originalname}`, req.ip);
 
   res.status(201).json({ 
     message: "Upload successful", 

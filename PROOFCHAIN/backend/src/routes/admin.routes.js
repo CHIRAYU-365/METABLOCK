@@ -1,5 +1,6 @@
 const express = require('express');
 const adminController = require('../controllers/admin.controller');
+const auditController = require('../controllers/audit.controller');
 const { authenticateToken, requireRole } = require('../middlewares/auth.middleware');
 const { z } = require('zod');
 const validate = require('../middlewares/validate.middleware');
@@ -23,6 +24,7 @@ router.use(requireRole(['SUPER_ADMIN']));
 
 router.get('/dashboard', adminController.getDashboardStats);
 router.get('/users', adminController.getUsers);
+router.get('/audit', auditController.getAuditLogs);
 router.put('/users/:id/status', validate(statusUpdateSchema), adminController.updateStatus);
 router.put('/users/:id/role', validate(roleUpdateSchema), adminController.updateRole);
 

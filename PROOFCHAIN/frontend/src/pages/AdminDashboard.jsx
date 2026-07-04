@@ -25,6 +25,7 @@ const AdminDashboard = () => {
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [copied, setCopied] = useState(null);
   const [revokedDocs, setRevokedDocs] = useState({});
+  const [hideRevoked, setHideRevoked] = useState(false);
   const { token, user } = useAuth();
   const wallet = useWallet();
   useEffect(() => {
@@ -59,6 +60,11 @@ const AdminDashboard = () => {
       console.error(err);
     }
   };
+
+  const visibleDocs = hideRevoked
+    ? documents.filter(doc => !revokedDocs[doc.docHash])
+    : documents;
+
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
   const fetchDocuments = async () => {
     setLoadingDocs(true);
@@ -337,7 +343,20 @@ const AdminDashboard = () => {
         )}
 
         <div style={{ gridColumn: '1 / -1' }}>
-          <h3 style={{ marginBottom: '1rem' }}>Certificates Issued by Me</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h3 style={{ margin: 0 }}>Certificates Issued by Me</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input 
+                type="checkbox" 
+                id="hideRevokedToggle" 
+                checked={hideRevoked} 
+                onChange={(e) => setHideRevoked(e.target.checked)} 
+              />
+              <label htmlFor="hideRevokedToggle" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                Hide Revoked Certificates
+              </label>
+            </div>
+          </div>
           {loadingDocs ? (
             <div style={styles.list}>
               {[1, 2, 3].map(i => (
@@ -348,9 +367,13 @@ const AdminDashboard = () => {
             <div className="glass-panel" style={{ textAlign: 'center', padding: '2rem' }}>
               <p style={{ color: 'var(--text-secondary)' }}>You haven't issued any certificates yet.</p>
             </div>
+          ) : visibleDocs.length === 0 ? (
+            <div className="glass-panel" style={{ textAlign: 'center', padding: '2rem' }}>
+              <p style={{ color: 'var(--text-secondary)' }}>All issued certificates are revoked.</p>
+            </div>
           ) : (
             <div style={styles.list}>
-              {documents.map(doc => (
+              {visibleDocs.map(doc => (
                 <div key={doc.id} className="glass-panel" style={styles.listItem}>
                   <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
                     <div style={{ background: '#fff', padding: '0.5rem', borderRadius: '8px' }}>

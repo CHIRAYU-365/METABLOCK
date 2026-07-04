@@ -97,6 +97,19 @@ const Dashboard = () => {
         <h1>Welcome, {user?.username}</h1>
         <p style={{ color: 'var(--text-secondary)' }}>View and verify your issued certificates.</p>
       </div>
+
+      <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '2rem' }}>
+        <div style={{ background: '#fff', padding: '0.5rem', borderRadius: '8px', display: 'inline-block' }}>
+          <QRCodeSVG value={user?.id || 'N/A'} size={110} />
+        </div>
+        <div>
+          <h3 style={{ color: 'var(--accent-secondary)' }}>My Personal Attendance QR Code</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.25rem', maxWidth: '500px' }}>
+            Show this QR code to the scanner on the login page to automatically record your entry/attendance.
+          </p>
+        </div>
+      </div>
+
       <div className="dashboard-full-grid">
         <div style={{ width: '100%' }}>
           <h3 style={{ marginBottom: '1rem' }}>My Certificates</h3>

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { Users, Shield, Clock } from 'lucide-react';
+import { Users, Shield, Clock, FileSpreadsheet } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import Papa from 'papaparse';
 
 const SuperAdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('users');
@@ -77,6 +78,99 @@ const SuperAdminDashboard = () => {
       console.error(err);
       toast.error("Failed to update request");
     }
+  };
+
+  const exportLoginRecords = () => {
+    const loginLogs = auditLogs.filter(log => 
+      log.action === 'USER_LOGIN' || 
+      log.action === 'ADMIN_LOGIN'
+    );
+    if (loginLogs.length === 0) {
+      return toast.error("No login logs found to export.");
+    }
+
+    const data = loginLogs.map(log => ({
+      Timestamp: new Date(log.createdAt).toLocaleString(),
+      User_ID: log.userId || 'N/A',
+      Action: log.action,
+      Details: log.details,
+      IP_Address: log.ipAddress || 'Unknown'
+    }));
+
+    const csv = Papa.unparse(data);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `ProofChain_Login_History_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Login history logs exported successfully!");
+  };
+
+  const exportAttendanceReport = () => {
+    const scanLogs = auditLogs.filter(log => log.action === 'CHECK_IN' || log.action === 'CHECK_OUT');
+    if (scanLogs.length === 0) {
+      return toast.error("No Check-In/Check-Out records found to export.");
+    }
+
+    const userLogs = {};
+    scanLogs.forEach(log => {
+      if (!userLogs[log.userId]) {
+        userLogs[log.userId] = [];
+      }
+      userLogs[log.userId].push(log);
+    });
+
+    const reportData = [];
+    Object.keys(userLogs).forEach(uId => {
+      const logs = userLogs[uId].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      
+      for (let i = 0; i < logs.length; i++) {
+        const log = logs[i];
+        if (log.action === 'CHECK_IN') {
+          const checkInTime = new Date(log.createdAt);
+          let checkOutTime = null;
+          let durationStr = 'Active / Not Checked-Out';
+
+          const nextLog = logs[i + 1];
+          if (nextLog && nextLog.action === 'CHECK_OUT') {
+            checkOutTime = new Date(nextLog.createdAt);
+            const diffMs = checkOutTime - checkInTime;
+            const diffMin = Math.floor(diffMs / (1000 * 60));
+            const hrs = Math.floor(diffMin / 60);
+            const mins = diffMin % 60;
+            durationStr = `${hrs} hrs ${mins} mins`;
+            i++; // skip check-out log in next loops
+          }
+
+          reportData.push({
+            'Employee ID/Details': log.userId || 'N/A',
+            'Date': checkInTime.toLocaleDateString(),
+            'Check-In': checkInTime.toLocaleTimeString(),
+            'Check-Out': checkOutTime ? checkOutTime.toLocaleTimeString() : 'N/A',
+            'Total Working Hours': durationStr,
+            'IP Address': log.ipAddress || 'Unknown'
+          });
+        }
+      }
+    });
+
+    if (reportData.length === 0) {
+      return toast.error("No complete Shift Attendance records found to export.");
+    }
+
+    const csv = Papa.unparse(reportData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `ProofChain_Employee_Working_Hours_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Employee working hours report generated and downloaded!");
   };
 
   return (
@@ -220,6 +314,22 @@ const SuperAdminDashboard = () => {
           </div>
         ) : activeTab === 'audit' ? (
           <div style={{ overflowX: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginBottom: '1rem' }}>
+              <button 
+                onClick={exportLoginRecords} 
+                className="btn-outline" 
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '8px 16px', fontSize: '0.85rem' }}
+              >
+                <FileSpreadsheet size={16} /> Export Login Logs
+              </button>
+              <button 
+                onClick={exportAttendanceReport} 
+                className="btn-primary" 
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '8px 16px', fontSize: '0.85rem' }}
+              >
+                <FileSpreadsheet size={16} /> Export Working Hours Report (Excel)
+              </button>
+            </div>
             <table style={styles.table}>
               <thead>
                 <tr>

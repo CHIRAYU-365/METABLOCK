@@ -66,8 +66,48 @@ const getMe = async (req, res) => {
   res.json({ user });
 };
 
+const qrAttendance = async (req, res) => {
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: "Missing user ID in QR payload" });
+  
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, username: true, email: true }
+  });
+  if (!user) return res.status(404).json({ error: "Invalid QR: User not found." });
+
+  // Get the last check-in/out log to determine state
+  const lastLog = await prisma.auditLog.findFirst({
+    where: {
+      userId: user.id,
+      action: { in: ['CHECK_IN', 'CHECK_OUT'] }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  let action = 'CHECK_IN';
+  let message = `Successfully Checked-In at ${new Date().toLocaleTimeString()}!`;
+  let details = `Check-in recorded via QR code.`;
+
+  if (lastLog && lastLog.action === 'CHECK_IN') {
+    action = 'CHECK_OUT';
+    const durationMs = new Date() - new Date(lastLog.createdAt);
+    const totalMinutes = Math.floor(durationMs / (1000 * 60));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    details = `Check-out recorded via QR code. Shift duration: ${hours}h ${minutes}m.`;
+    message = `Successfully Checked-Out at ${new Date().toLocaleTimeString()}! Shift: ${hours}h ${minutes}m.`;
+  }
+
+  await auditService.logAction(user.id, action, details, req.ip);
+
+  res.json({ message, action, user: user.username });
+};
+
 module.exports = {
   register,
   login,
-  getMe
+  getMe,
+  qrAttendance
 };

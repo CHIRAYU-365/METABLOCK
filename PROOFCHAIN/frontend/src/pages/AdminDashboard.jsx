@@ -185,30 +185,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const [emailingDocs, setEmailingDocs] = useState({});
-
-  const handleSendMail = async (docHash) => {
-    console.log("handleSendMail triggered with docHash:", docHash);
-    try {
-      if (!docHash) {
-        console.error("No docHash provided to handleSendMail");
-        toast.error("Error: Document hash is missing.");
-        return;
-      }
-      setEmailingDocs(prev => ({ ...prev, [docHash]: true }));
-      const res = await axios.post(`${API_URL}/api/documents/${docHash}/send-email`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      console.log("Email API response success:", res.data);
-      toast.success(res.data.message);
-    } catch (err) {
-      console.error("handleSendMail failed:", err);
-      toast.error(err.response?.data?.error || "Network error. The server might have timed out trying to connect to Gmail.");
-    } finally {
-      setEmailingDocs(prev => ({ ...prev, [docHash]: false }));
-    }
-  };
-
   const handleMintApprovedRequest = async (req) => {
     if (!wallet.connected) return toast.error("Please connect your wallet first");
     try {
@@ -442,16 +418,7 @@ const AdminDashboard = () => {
                     <a href={`https://gateway.pinata.cloud/ipfs/${doc.ipfsCid}`} target="_blank" rel="noreferrer" className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                       IPFS <ExternalLink size={14} />
                     </a>
-                    {!revokedDocs[doc.docHash] && (
-                      <button 
-                        onClick={() => handleSendMail(doc.docHash)}
-                        className="btn-outline" 
-                        disabled={emailingDocs[doc.docHash]}
-                        style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem', borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)', opacity: emailingDocs[doc.docHash] ? 0.6 : 1, cursor: emailingDocs[doc.docHash] ? 'wait' : 'pointer' }}
-                      >
-                        <Mail size={14} /> {emailingDocs[doc.docHash] ? 'Sending...' : 'Send as Mail'}
-                      </button>
-                    )}
+
                     {revokedDocs[doc.docHash] ? (
                       <span style={{ fontSize: '0.8rem', color: 'var(--error)', padding: '6px 12px' }}>Revoked</span>
                     ) : (

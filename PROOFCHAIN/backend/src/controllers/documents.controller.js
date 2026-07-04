@@ -116,30 +116,10 @@ const getRequests = async (req, res) => {
   res.json({ requests });
 };
 
-const sendEmail = async (req, res) => {
-  const { docHash } = req.params;
 
-  const files = await listDocumentsByKeyValue("docHash", docHash);
-  if (!files || files.length === 0) {
-    return res.status(404).json({ error: "Document not found on IPFS registry" });
-  }
-
-  const file = files[0];
-  const documentName = file.metadata.name;
-  const ownerEmail = file.metadata.keyvalues.ownerEmail;
-
-  if (!ownerEmail) {
-    return res.status(400).json({ error: "Recipient email not associated with this document" });
-  }
-
-  await emailService.sendVerificationEmail(ownerEmail, documentName, docHash);
-
-  res.json({ message: `Verification email sent successfully to ${ownerEmail}` });
-};
 
 module.exports = {
   upload,
   getDocuments,
-  getRequests,
-  sendEmail
+  getRequests
 };

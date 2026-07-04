@@ -2,18 +2,18 @@
 ## COMPREHENSIVE ARCHITECTURAL DESIGN AND SYSTEM REQUIREMENTS SPECIFICATION
 ### VERSION TWO POINT ZERO - PRODUCTION READY MANUAL
 
-<p align="left">
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/solana/solana-original.svg" alt="Solana" width="40" height="40" style="margin-right: 10px;" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/rust/rust-plain.svg" alt="Rust" width="40" height="40" style="margin-right: 10px;" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" alt="React" width="40" height="40" style="margin-right: 10px;" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" alt="Node.js" width="40" height="40" style="margin-right: 10px;" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg" alt="Express" width="40" height="40" style="margin-right: 10px; filter: invert(1);" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" alt="PostgreSQL" width="40" height="40" style="margin-right: 10px;" />
-  <img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/prisma.svg" alt="Prisma" width="40" height="40" style="margin-right: 10px; filter: invert(1);" />
-  <img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/ipfs.svg" alt="IPFS" width="40" height="40" style="margin-right: 10px;" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/netlify/netlify-original.svg" alt="Netlify" width="40" height="40" style="margin-right: 10px;" />
-  <img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/railway.svg" alt="Railway" width="40" height="40" style="margin-right: 10px; filter: invert(1);" />
-  <img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/pwa.svg" alt="PWA" width="40" height="40" style="margin-right: 10px;" />
+<p align="center">
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/solana/solana-original.svg" alt="Solana" width="36" height="36" style="background: #ffffff; padding: 8px; border-radius: 50%; margin: 4px; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/rust/rust-plain.svg" alt="Rust" width="36" height="36" style="background: #ffffff; padding: 8px; border-radius: 50%; margin: 4px; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" alt="React" width="36" height="36" style="background: #ffffff; padding: 8px; border-radius: 50%; margin: 4px; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" alt="Node.js" width="36" height="36" style="background: #ffffff; padding: 8px; border-radius: 50%; margin: 4px; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg" alt="Express" width="36" height="36" style="background: #ffffff; padding: 8px; border-radius: 50%; margin: 4px; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" alt="PostgreSQL" width="36" height="36" style="background: #ffffff; padding: 8px; border-radius: 50%; margin: 4px; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" />
+  <img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/prisma.svg" alt="Prisma" width="36" height="36" style="background: #ffffff; padding: 8px; border-radius: 50%; margin: 4px; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" />
+  <img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/ipfs.svg" alt="IPFS" width="36" height="36" style="background: #ffffff; padding: 8px; border-radius: 50%; margin: 4px; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/netlify/netlify-original.svg" alt="Netlify" width="36" height="36" style="background: #ffffff; padding: 8px; border-radius: 50%; margin: 4px; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" />
+  <img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/railway.svg" alt="Railway" width="36" height="36" style="background: #ffffff; padding: 8px; border-radius: 50%; margin: 4px; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" />
+  <img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/pwa.svg" alt="PWA" width="36" height="36" style="background: #ffffff; padding: 8px; border-radius: 50%; margin: 4px; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" />
 </p>
 
 ---

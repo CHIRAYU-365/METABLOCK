@@ -5,11 +5,12 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useAuth } from '../context/AuthContext';
 import { calculateSHA256 } from '../utils/hash';
 import { abstractHash } from '../utils/mask';
-import { getProvider, PROGRAM_ID } from '../utils/solana';
+import { getProvider, PROGRAM_ID, getDocumentPda, SOLANA_RPC_ENDPOINT } from '../utils/solana';
 import idl from '../utils/blockchain.json';
 import toast from 'react-hot-toast';
 import { Copy, ExternalLink, Check, QrCode } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { Connection } from '@solana/web3.js';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import BulkUpload from '../components/BulkUpload';
 import { analyzeDocument } from '../utils/aiService';
@@ -23,11 +24,41 @@ const AdminDashboard = () => {
   const [uploading, setUploading] = useState(false);
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [copied, setCopied] = useState(null);
+  const [revokedDocs, setRevokedDocs] = useState({});
   const { token, user } = useAuth();
   const wallet = useWallet();
   useEffect(() => {
     fetchDocuments();
   }, []);
+
+  useEffect(() => {
+    if (documents.length > 0) {
+      checkRevocationStatuses();
+    }
+  }, [documents]);
+
+  const checkRevocationStatuses = async () => {
+    const statuses = {};
+    try {
+      const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
+      for (const doc of documents) {
+        try {
+          const pda = getDocumentPda(doc.docHash);
+          const accountInfo = await connection.getAccountInfo(pda);
+          if (accountInfo) {
+            const data = accountInfo.data;
+            const isRevoked = data[data.length - 2] === 1;
+            statuses[doc.docHash] = isRevoked;
+          }
+        } catch (e) {
+          console.error("Error reading PDA status", e);
+        }
+      }
+      setRevokedDocs(statuses);
+    } catch (err) {
+      console.error(err);
+    }
+  };
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
   const fetchDocuments = async () => {
     setLoadingDocs(true);
@@ -103,7 +134,7 @@ const AdminDashboard = () => {
       toast.success(
         <div>
           Successfully registered! <br/>
-          <a href={`https://explorer.solana.com/tx/${txId}?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899`} target="_blank" rel="noreferrer" style={{ textDecoration: 'underline', color: 'var(--accent-primary)' }}>View on Explorer</a>
+          <a href={`https://explorer.solana.com/tx/${txId}?cluster=devnet`} target="_blank" rel="noreferrer" style={{ textDecoration: 'underline', color: 'var(--accent-primary)' }}>View on Explorer</a>
         </div>, 
         { duration: 5000 }
       );
@@ -136,7 +167,7 @@ const AdminDashboard = () => {
       toast.success(
         <div>
           Document revoked! <br/>
-          <a href={`https://explorer.solana.com/tx/${txId}?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899`} target="_blank" rel="noreferrer" style={{ textDecoration: 'underline', color: 'var(--accent-primary)' }}>View on Explorer</a>
+          <a href={`https://explorer.solana.com/tx/${txId}?cluster=devnet`} target="_blank" rel="noreferrer" style={{ textDecoration: 'underline', color: 'var(--accent-primary)' }}>View on Explorer</a>
         </div>,
         { duration: 5000 }
       );
@@ -165,7 +196,7 @@ const AdminDashboard = () => {
       toast.success(
         <div>
           Multi-Sig Document successfully minted! <br/>
-          <a href={`https://explorer.solana.com/tx/${txId}?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899`} target="_blank" rel="noreferrer" style={{ textDecoration: 'underline', color: 'var(--accent-primary)' }}>View on Explorer</a>
+          <a href={`https://explorer.solana.com/tx/${txId}?cluster=devnet`} target="_blank" rel="noreferrer" style={{ textDecoration: 'underline', color: 'var(--accent-primary)' }}>View on Explorer</a>
         </div>, 
         { duration: 5000 }
       );
@@ -347,6 +378,11 @@ const AdminDashboard = () => {
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginTop: '4px' }}>
                       Owner: {doc.ownerEmail}
                     </span>
+                    {revokedDocs[doc.docHash] && (
+                      <span style={{ display: 'inline-block', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.2)', color: 'var(--error)', marginTop: '4px', fontWeight: 'bold' }}>
+                        REVOKED ON BLOCKCHAIN
+                      </span>
+                    )}
                     {(doc.aiDocType || doc.aiKeywords) && (
                       <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(168, 85, 247, 0.2)', color: 'var(--accent-secondary)' }}>
@@ -365,13 +401,17 @@ const AdminDashboard = () => {
                     <a href={`https://gateway.pinata.cloud/ipfs/${doc.ipfsCid}`} target="_blank" rel="noreferrer" className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                       IPFS <ExternalLink size={14} />
                     </a>
-                    <button 
-                      className="btn-outline" 
-                      onClick={() => handleRevoke(doc.docHash)} 
-                      style={{ padding: '6px 12px', fontSize: '0.8rem', borderColor: 'var(--error)', color: 'var(--error)' }}
-                    >
-                      Revoke
-                    </button>
+                    {revokedDocs[doc.docHash] ? (
+                      <span style={{ fontSize: '0.8rem', color: 'var(--error)', padding: '6px 12px' }}>Revoked</span>
+                    ) : (
+                      <button 
+                        className="btn-outline" 
+                        onClick={() => handleRevoke(doc.docHash)} 
+                        style={{ padding: '6px 12px', fontSize: '0.8rem', borderColor: 'var(--error)', color: 'var(--error)' }}
+                      >
+                        Revoke
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

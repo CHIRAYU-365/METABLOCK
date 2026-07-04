@@ -1,8 +1,7 @@
 const nodemailer = require('nodemailer');
 
-const createTransporter = () => {
-  // Use SMTP settings from environment variables, or fallback to Ethereal for testing
-  const host = process.env.SMTP_HOST || 'smtp.ethereal.email';
+const createTransporter = async () => {
+  const host = process.env.SMTP_HOST;
   const port = parseInt(process.env.SMTP_PORT || '587');
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
@@ -15,13 +14,15 @@ const createTransporter = () => {
       auth: { user, pass }
     });
   } else {
-    // Development fallback (Ethereal fake SMTP)
+    // Generate ethereal test account dynamically on-the-fly
+    const testAccount = await nodemailer.createTestAccount();
     return nodemailer.createTransport({
       host: 'smtp.ethereal.email',
       port: 587,
+      secure: false,
       auth: {
-        user: 'fake_user_from_ethereal', // Ethereal account
-        pass: 'fake_pass_from_ethereal'
+        user: testAccount.user,
+        pass: testAccount.pass
       }
     });
   }
@@ -29,7 +30,7 @@ const createTransporter = () => {
 
 const sendVerificationEmail = async (toEmail, documentName, docHash) => {
   try {
-    const transporter = createTransporter();
+    const transporter = await createTransporter();
     const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify?hash=${docHash}`;
 
     const mailOptions = {
@@ -58,6 +59,12 @@ const sendVerificationEmail = async (toEmail, documentName, docHash) => {
 
     const info = await transporter.sendMail(mailOptions);
     console.log(`Email verification sent: ${info.messageId}`);
+    
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+    if (previewUrl) {
+      console.log(`Ethereal Mail Preview Link: ${previewUrl}`);
+    }
+    
     return info;
   } catch (error) {
     console.error('Failed to send verification email:', error);

@@ -109,3 +109,7 @@ dist-ssr/
 # Local Dev Wallet Configuration
 *local-wallet.json
 
+# Temporary scratch files
+frontend/run_build.js
+frontend/build_output.txt
+

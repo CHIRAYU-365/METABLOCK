@@ -1,4 +1,5 @@
 const { PinataSDK } = require('pinata-web3');
+const { Blob, File } = require('buffer');
 
 const pinata = new PinataSDK({
   pinataJwt: process.env.PINATA_JWT,

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const handleLogout = () => {
     logout();
     navigate('/login');

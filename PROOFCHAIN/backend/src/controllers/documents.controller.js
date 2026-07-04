@@ -14,6 +14,11 @@ const upload = async (req, res) => {
   const recipient = await prisma.user.findUnique({ where: { email: recipientEmail } });
   if (!recipient) return res.status(404).json({ error: "Recipient user not found" });
 
+  const existingRequest = await prisma.documentRequest.findUnique({ where: { docHash } });
+  if (existingRequest) {
+    return res.status(400).json({ error: "This document is already pending multi-sig approval or registered on the network." });
+  }
+
   const metadata = {
     ownerId: recipient.id,
     ownerEmail: recipient.email,

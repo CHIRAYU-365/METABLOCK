@@ -54,14 +54,14 @@ const login = async (req, res) => {
 
   res.json({ 
     token, 
-    user: { id: user.id, username: user.username, email: user.email, role: user.role, status: user.status } 
+    user: { id: user.id, username: user.username, email: user.email, role: user.role, status: user.status, designation: user.designation } 
   });
 };
 
 const getMe = async (req, res) => {
   const user = await prisma.user.findUnique({ 
     where: { id: req.user.id }, 
-    select: { id: true, username: true, email: true, role: true, status: true } 
+    select: { id: true, username: true, email: true, role: true, status: true, designation: true } 
   });
   res.json({ user });
 };

@@ -32,7 +32,7 @@ const getDashboardStats = async (req, res) => {
 
 const getUsers = async (req, res) => {
   const users = await prisma.user.findMany({
-    select: { id: true, username: true, email: true, role: true, status: true, createdAt: true },
+    select: { id: true, username: true, email: true, role: true, status: true, designation: true, createdAt: true },
     orderBy: { createdAt: 'desc' }
   });
   res.json({ users });
@@ -77,11 +77,21 @@ const updateDocumentRequest = async (req, res) => {
   res.json({ message: "Request updated successfully", request });
 };
 
+const updateDesignation = async (req, res) => {
+  const { designation } = req.body;
+  const user = await prisma.user.update({
+    where: { id: req.params.id },
+    data: { designation }
+  });
+  res.json({ message: "Designation updated successfully", user: { id: user.id, designation: user.designation } });
+};
+
 module.exports = {
   getDashboardStats,
   getUsers,
   updateStatus,
   updateRole,
+  updateDesignation,
   getDocumentRequests,
   updateDocumentRequest
 };

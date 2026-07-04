@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { Users, Shield, Clock, FileSpreadsheet } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import Papa from 'papaparse';
+import { QRCodeSVG } from 'qrcode.react';
 
 const SuperAdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('users');
@@ -78,6 +79,116 @@ const SuperAdminDashboard = () => {
       console.error(err);
       toast.error("Failed to update request");
     }
+  const handleSaveDesignation = async (userId, value) => {
+    try {
+      await axios.put(`${API_URL}/api/superadmin/users/${userId}/designation`, { designation: value }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success("Designation updated!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update designation");
+    }
+  };
+
+  const downloadIDCard = (name, designation, email, userId) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 400;
+    canvas.height = 600;
+    const ctx = canvas.getContext('2d');
+
+    const grad = ctx.createLinearGradient(0, 0, 0, 600);
+    grad.addColorStop(0, '#0a0a0c');
+    grad.addColorStop(0.5, '#121216');
+    grad.addColorStop(1, '#1e1233');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 400, 600);
+
+    ctx.fillStyle = 'rgba(99, 102, 241, 0.1)';
+    ctx.beginPath();
+    ctx.arc(0, 0, 200, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(168, 85, 247, 0.1)';
+    ctx.beginPath();
+    ctx.arc(400, 600, 250, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 24px Outfit, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('MetaBlock', 200, 60);
+
+    ctx.fillStyle = '#a855f7';
+    ctx.font = 'bold 11px Inter, sans-serif';
+    ctx.fillText('A WEB 3.0 COMPANY', 200, 80);
+
+    ctx.fillStyle = '#a1a1aa';
+    ctx.font = '10px Inter, sans-serif';
+    ctx.fillText('CIN: ABC1182', 200, 95);
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.beginPath();
+    ctx.moveTo(40, 110);
+    ctx.lineTo(360, 110);
+    ctx.stroke();
+
+    ctx.fillStyle = '#6366f1';
+    ctx.font = 'bold 18px Outfit, sans-serif';
+    ctx.fillText(name.toUpperCase(), 200, 160);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'italic 14px Inter, sans-serif';
+    ctx.fillText(designation, 200, 190);
+
+    ctx.fillStyle = '#a1a1aa';
+    ctx.font = '12px Inter, sans-serif';
+    ctx.fillText(email, 200, 215);
+
+    const svgElement = document.querySelector(`svg[data-qr="${userId}"]`);
+    let svgBlob;
+    if (svgElement) {
+      const svgString = new XMLSerializer().serializeToString(svgElement);
+      svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    } else {
+      const tempSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      const tempString = new XMLSerializer().serializeToString(tempSvg);
+      svgBlob = new Blob([tempString], { type: 'image/svg+xml;charset=utf-8' });
+    }
+    
+    const url = URL.createObjectURL(svgBlob);
+    const qrImg = new Image();
+    qrImg.onload = () => {
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.roundRect(130, 250, 140, 140, 12);
+      ctx.fill();
+
+      ctx.drawImage(qrImg, 140, 260, 120, 120);
+      URL.revokeObjectURL(url);
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.beginPath();
+      ctx.moveTo(40, 450);
+      ctx.lineTo(360, 450);
+      ctx.stroke();
+
+      ctx.fillStyle = '#a1a1aa';
+      ctx.font = '9px Inter, sans-serif';
+      ctx.fillText('36/12, Kriran Path, Mansarovar, Jaipur, RJ', 200, 480);
+      ctx.fillText('Phone: +91-78777 00648 | Website: www.metablocktech.com', 200, 500);
+
+      ctx.fillStyle = '#6366f1';
+      ctx.font = 'bold 10px Inter, sans-serif';
+      ctx.fillText('EMPLOYEE ATTENDANCE CARD', 200, 540);
+
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `${name.replace(/\s+/g, '_')}_MetaBlock_ID.png`;
+      link.click();
+    };
+    qrImg.src = url;
   };
 
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
@@ -213,8 +324,9 @@ const SuperAdminDashboard = () => {
                 <tr>
                   <th style={styles.th}>User</th>
                   <th style={styles.th}>Role</th>
+                  <th style={styles.th}>Designation</th>
                   <th style={styles.th}>Status</th>
-                  <th style={styles.th}>Actions</th>
+                  <th style={styles.th}>Attendance QR Code</th>
                 </tr>
               </thead>
               <tbody>
@@ -237,6 +349,19 @@ const SuperAdminDashboard = () => {
                       </select>
                     </td>
                     <td style={styles.td}>
+                      {u.role === 'SUPER_ADMIN' ? (
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>N/A</span>
+                      ) : (
+                        <input 
+                          type="text" 
+                          defaultValue={u.designation || 'Developer'} 
+                          onBlur={(e) => handleSaveDesignation(u.id, e.target.value)}
+                          style={styles.miniInput}
+                          placeholder="Designation"
+                        />
+                      )}
+                    </td>
+                    <td style={styles.td}>
                       <span style={{
                         ...styles.statusBadge,
                         backgroundColor: u.status === 'ACTIVE' || u.status === 'APPROVED' ? 'rgba(34, 197, 94, 0.2)' : 
@@ -248,7 +373,9 @@ const SuperAdminDashboard = () => {
                       </span>
                     </td>
                     <td style={styles.td}>
-                      {u.role === 'ADMIN' && u.status === 'PENDING' && (
+                      {u.role === 'SUPER_ADMIN' ? (
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>N/A (Super Admin)</span>
+                      ) : u.status === 'PENDING' ? (
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           <button onClick={() => updateStatus(u.id, 'APPROVED')} className="btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
                             Approve
@@ -257,11 +384,24 @@ const SuperAdminDashboard = () => {
                             Reject
                           </button>
                         </div>
-                      )}
-                      {(u.role === 'ADMIN' && u.status === 'APPROVED') && (
-                         <button onClick={() => updateStatus(u.id, 'REVOKED')} className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', borderColor: 'var(--error)', color: 'var(--error)' }}>
-                           Revoke Access
-                         </button>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <div style={{ background: '#fff', padding: '0.35rem', borderRadius: '6px', display: 'inline-block' }}>
+                            <QRCodeSVG value={u.id} size={55} data-qr={u.id} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                              ID: {u.id.substring(0, 8)}...
+                            </span>
+                            <button 
+                              onClick={() => downloadIDCard(u.username, u.designation || 'Developer', u.email, u.id)}
+                              className="btn-primary"
+                              style={{ padding: '4px 8px', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                              Download ID
+                            </button>
+                          </div>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -487,6 +627,16 @@ const styles = {
     fontSize: '0.75rem',
     fontWeight: 'bold',
     letterSpacing: '0.5px'
+  },
+  miniInput: {
+    padding: '6px 10px',
+    borderRadius: '6px',
+    border: '1px solid var(--border-color)',
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    color: 'white',
+    width: '140px',
+    fontSize: '0.85rem',
+    outline: 'none'
   },
   modalOverlay: {
     position: 'fixed',

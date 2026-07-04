@@ -19,6 +19,12 @@ const roleUpdateSchema = z.object({
   })
 });
 
+const designationUpdateSchema = z.object({
+  body: z.object({
+    designation: z.string().min(1, "Designation is required")
+  })
+});
+
 router.use(authenticateToken);
 router.use(requireRole(['SUPER_ADMIN']));
 
@@ -27,6 +33,7 @@ router.get('/users', adminController.getUsers);
 router.get('/audit', auditController.getAuditLogs);
 router.put('/users/:id/status', validate(statusUpdateSchema), adminController.updateStatus);
 router.put('/users/:id/role', validate(roleUpdateSchema), adminController.updateRole);
+router.put('/users/:id/designation', validate(designationUpdateSchema), adminController.updateDesignation);
 
 router.get('/requests', adminController.getDocumentRequests);
 router.put('/requests/:id/status', validate(statusUpdateSchema), adminController.updateDocumentRequest);

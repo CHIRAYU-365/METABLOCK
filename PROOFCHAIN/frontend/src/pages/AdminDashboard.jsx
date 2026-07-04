@@ -147,7 +147,11 @@ const AdminDashboard = () => {
       fetchDocuments();
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.error || err.message || "Upload failed");
+      let errorMsg = err.response?.data?.error || err.message || "Upload failed";
+      if (errorMsg.includes("already in use") || errorMsg.includes("0x0")) {
+        errorMsg = "This document has already been registered on the blockchain! Try uploading a different or modified file.";
+      }
+      toast.error(errorMsg);
     } finally {
       setUploading(false);
     }
@@ -208,7 +212,11 @@ const AdminDashboard = () => {
       fetchDocuments();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to mint: " + err.message);
+      let errorMsg = err.message || "Failed to mint";
+      if (errorMsg.includes("already in use") || errorMsg.includes("0x0")) {
+        errorMsg = "This document has already been registered on the blockchain!";
+      }
+      toast.error(errorMsg);
     }
   };
 

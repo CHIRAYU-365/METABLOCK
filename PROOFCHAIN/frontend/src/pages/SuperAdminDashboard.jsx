@@ -79,6 +79,7 @@ const SuperAdminDashboard = () => {
       console.error(err);
       toast.error("Failed to update request");
     }
+  };
   const handleSaveDesignation = async (userId, value) => {
     try {
       await axios.put(`${API_URL}/api/superadmin/users/${userId}/designation`, { designation: value }, {

@@ -121,43 +121,45 @@ graph TD
     ExpressBackend -->|Initialize Account| SolanaLedger
 ```
 
-### 3.2 DETAILED TECH STACK DIRECTORY
-The platform is built using the following technologies:
-
-- **Core Technologies:**
-  - **Structure:** HTML5 standard elements for semantics.
-  - **Styling:** Custom CSS with dark mode variables, hover animations, and glassmorphic designs.
-  - **Runtime Framework:** React with Vite build tool.
-
-- **Frontend Dependencies:**
-  - **Routing:** React Router DOM for routing.
-  - **State Management:** Custom React Context providers for session tracking.
-  - **Visual Dashboards:** Recharts library for charting growth and issuance metrics.
-  - **Icons:** Lucide React.
-  - **CSV Parser:** PapaParse for bulk uploads and CSV exporting.
-  - **QR Code Rendering:** QRCode.react for canvas-based QR card displays.
-  - **QR Code Scanning:** Html5-qrcode wrapper for camera capture and stream decoding.
-  - **Solana Web3 Interface:** `@solana/web3.js` and `@solana/wallet-adapter-react`.
-  - **Anchor Framework Integration:** `@coral-xyz/anchor`.
-
-- **Backend Architecture:**
-  - **Runtime environment:** Node.js.
-  - **API Framework:** Express.js.
-  - **Object Relational Mapper:** Prisma ORM.
-  - **Security Tools:** bcryptjs for credentials, jsonwebtoken for sessions, express-rate-limit for abuse prevention.
-  - **Mail Dispatcher:** Nodemailer with dynamic Ethereal Mail fallbacks.
-  - **File Handler:** Multer for memory buffers during upload streams.
-
-- **Blockchain Environment:**
-  - **Smart Contract Language:** Rust.
-  - **Blockchain SDK:** Anchor Framework.
-  - **Target Network:** Solana Devnet.
-
-- **Infrastructure & Storage:**
-  - **Relational Database:** PostgreSQL hosted on Neon.
-  - **Decentralized Storage:** Pinata IPFS Gateway.
-  - **Frontend Hosting:** Netlify.
-  - **Backend Hosting:** Railway.app.
+- **Detailed Tech Stack Directory (v2.1):**
+  The platform is built using the following technologies:
+  
+  - **Core Technologies:**
+    - **Structure:** HTML5 standard elements for semantics.
+    - **Styling:** Custom CSS with dark mode variables, hover animations, and glassmorphic designs.
+    - **Runtime Framework:** React 19 with Vite 8 + Rolldown build tool.
+  
+  - **Frontend Dependencies:**
+    - **Routing:** React Router v7 utilizing high-performance Data Routing (`createBrowserRouter`, `RouterProvider`, `useOutlet`).
+    - **State Management:** Custom React Context providers for session tracking.
+    - **Visual Dashboards:** Recharts library for charting growth and issuance metrics.
+    - **Icons:** Lucide React.
+    - **CSV Parser:** PapaParse for bulk uploads and CSV exporting.
+    - **QR Code Rendering:** QRCode.react for canvas-based QR card displays.
+    - **QR Code Scanning:** Html5-qrcode wrapper for camera capture and stream decoding.
+    - **Solana Web3 Interface:** `@solana/web3.js` and `@solana/wallet-adapter-react`.
+    - **Anchor Framework Integration:** `@coral-xyz/anchor`.
+    - **Build Resolution:** Direct `react-is` integration to satisfy Rolldown compiling requirements under React 19.
+  
+  - **Backend Architecture:**
+    - **Runtime environment:** Node.js.
+    - **API Framework:** Express 5.x (featuring native asynchronous promise rejection handling).
+    - **Object Relational Mapper:** Prisma ORM v5 (for database validation schemas).
+    - **Security & Rate Limiting:** Custom inline in-place XSS middleware (crash-free under Express 5), jsonwebtoken for sessions, express-rate-limit (applied locally to router scopes for CodeQL compliance).
+    - **Mail Dispatcher:** Nodemailer with dynamic Ethereal Mail fallbacks.
+    - **File Handler:** Multer for memory buffers during upload streams.
+  
+  - **Blockchain Environment:**
+    - **Smart Contract Language:** Rust.
+    - **Blockchain SDK:** Anchor Framework.
+    - **Target Network:** Solana Devnet.
+    - **Helper Tools:** Cross-platform Node.js `deploy-anchor.js` script with automatic port monitoring and 30-second timeouts.
+  
+  - **Infrastructure & Storage:**
+    - **Relational Database:** PostgreSQL hosted on Neon.
+    - **Decentralized Storage:** Pinata IPFS Gateway.
+    - **Frontend Hosting:** Vercel (using custom rewrite configurations for React Router).
+    - **Backend Hosting:** Railway.app.
 
 </details>
 
@@ -420,5 +422,44 @@ To ensure the platform remains stable as user volume grows, the following optimi
 4. **Public Verification Sandbox:**
    - Document verification is performed client-side, offloading hashing processes to the user's browser.
    - RPC queries are load-balanced across multiple public Solana validator nodes to prevent API timeouts during peak times.
+
+</details>
+
+---
+
+## SECTION 8: ARCHITECTURAL UPGRADES AND HARDENING MANUAL (v2.1)
+
+<details>
+<summary><b>Hardening Operations, Migration Logs & Cross-Platform Utilities</b></summary>
+
+### 8.1 EXPRESS 5 & NATIVE ERROR INTERACTION
+With the transition from Express 4 to Express 5, all middleware and routes natively intercept promise rejections (asynchronous errors). This allowed the complete removal of third-party wrappers like `express-async-errors`, resulting in native, fast, and crash-free runtime error propagation directly into the system's global error handler.
+
+### 8.2 CUSTOM IN-PLACE INPUT SANITIZATION
+Express 5 makes the `req.query` parameters read-only properties under getters. Standard libraries like `xss-clean` or `express-xss-sanitizer` fail by trying to reassign `req.query` directly, triggering a terminal runtime crash:
+`TypeError: Cannot set property query of #<IncomingMessage> which has only a getter`
+
+To circumvent this, the v2.1 API implements a custom recursive HTML-entity escaping engine that sanitizes query parameters **in-place** (by mutating nested values within references instead of reassigning the root object). This yields safe inputs and prevents crash vectors.
+
+### 8.3 LOCALIZED SUB-DIRECTORY SCOPED GIT IGNORES
+To isolate developmental operations in complex workspaces, scoped `.gitignore` files were deployed:
+- **`backend/`**: Ignores local env overrides, prisma database fragments, and winston logging files.
+- **`frontend/`**: Ignores Vite caches (`.vite/`), package-manager lint configurations, and compiled production build outputs (`dist/`, `build/`).
+- **`blockchain/`**: Prevents accidental tracking of on-chain keypairs (`*-keypair.json`), Solana local ledger checkpoints (`test-ledger/`), and rust targets.
+- **Root Index**: Cleared the git tracking index cache to ensure previously committed `node_modules` folders are no longer tracked in version histories.
+
+### 8.4 CROSS-PLATFORM PORT-WAITING AND DEPLOYMENT UTILITY
+The original anchor deployment script was bound to a bash-exclusive CLI wrapper:
+`bash -c 'until curl ... do sleep 1; done && anchor deploy'`
+This string failed on Windows shells (like cmd/PowerShell) due to different quote escaping rules. 
+
+The system now runs `node deploy-anchor.js`. This script opens a local TCP socket scanner to monitor the validator port `8899`, waits for a handshake, and then executes `anchor build && anchor deploy`. It includes a built-in 30-second warning timeout that flags if the Solana validator CLI is not installed locally, suggesting fallback command suites like `npm run dev` to save CPU resources.
+
+### 8.5 DIRECT ROUTER RATE LIMITING (CODEQL HARDENING)
+CodeQL static security analyzers check route middleware chains within the file they are declared. To fully satisfy static compliance:
+- Router-level rate limiters (`express-rate-limit`) were imported and applied directly inside both [documents.routes.js](file:///c:/Users/chira/OneDrive/Desktop/METABLOCK/METABLOCK/PROOFCHAIN/backend/src/routes/documents.routes.js) and [admin.routes.js](file:///c:/Users/chira/OneDrive/Desktop/METABLOCK/METABLOCK/PROOFCHAIN/backend/src/routes/admin.routes.js) before routes execute. This prevents CodeQL warnings and implements local flood defense.
+
+### 8.6 VITE 8 & ROLLED DOWN BUNDLER COMPILATION ALIGNMENT
+Upgrading to Vite 8 introduced the Rust-based production compiler **Rolldown**. Under React 19, Rolldown requires explicit dependency boundaries during tree-shaking. Direct dependency declarations of `react-is` were added to the client application to ensure smooth minification of libraries like `recharts` during production compilation.
 
 </details>

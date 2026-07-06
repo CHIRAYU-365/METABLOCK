@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/METABLOCK.iml" filepath="$PROJECT_DIR$/.idea/METABLOCK.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/PROOFCHAIN.iml" filepath="$PROJECT_DIR$/.idea/PROOFCHAIN.iml" />
     </modules>
   </component>
 </project>

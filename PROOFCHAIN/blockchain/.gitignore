@@ -1,1 +1,22 @@
-# Managed by root .gitignore
+# Anchor/Solana build artifacts
+target/
+.anchor/
+
+# Local test validator ledger
+test-ledger/
+
+# Private keypairs (Strictly ignore all keys)
+*.keypair.json
+*-keypair.json
+*-upgrade-buffer.json
+*local-wallet.json
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS Files
+.DS_Store
+Thumbs.db

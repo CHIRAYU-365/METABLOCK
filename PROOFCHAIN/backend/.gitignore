@@ -1,14 +1,17 @@
 # Dependencies
 node_modules/
 
-# Build outputs
-dist/
-build/
-
 # Environment configurations
 .env
 .env.*
-.env.local
+
+# Logs
+*.log
+logs/
+
+# Prisma local database files (but commit migrations)
+*.db
+*.db-journal
 
 # IDEs and Editors
 .idea/
@@ -20,7 +23,5 @@ build/
 .DS_Store
 Thumbs.db
 
-# Linter & Bundler Caches
-.eslintcache
-.vite/
-.cache/
+# Solana test ledger if generated in backend
+test-ledger/

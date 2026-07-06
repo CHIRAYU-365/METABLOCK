@@ -113,3 +113,9 @@ dist-ssr/
 frontend/run_build.js
 frontend/build_output.txt
 
+# Local Upgrade Automation Scripts
+upgrade_all.bat
+upgrade_all.sh
+deploy-anchor.js
+solana-install.sh
+

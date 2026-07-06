@@ -1,12 +1,43 @@
 require('dotenv').config();
-require('express-async-errors'); 
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const hpp = require('hpp');
-const xss = require('xss-clean');
 const rateLimit = require('express-rate-limit');
+
+// Custom lightweight XSS sanitizer compatible with Express 5's read-only query object
+const sanitizeHtml = (str) => {
+  if (typeof str !== 'string') return str;
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+};
+
+const sanitize = (obj) => {
+  if (typeof obj === 'string') {
+    return sanitizeHtml(obj);
+  }
+  if (obj && typeof obj === 'object') {
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        obj[key] = sanitize(obj[key]);
+      }
+    }
+  }
+  return obj;
+};
+
+const xss = () => (req, res, next) => {
+  if (req.body) sanitize(req.body);
+  if (req.query) sanitize(req.query);
+  if (req.params) sanitize(req.params);
+  next();
+};
 
 const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
@@ -61,6 +92,12 @@ const authLimiter = rateLimit({
   message: 'Too many authentication attempts from this IP, please try again after 5 minutes.'
 });
 
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  max: 100, 
+  message: 'Too many requests from this IP, please try again after 15 minutes.'
+});
+
 
 const morganFormat = process.env.NODE_ENV !== 'production' ? 'dev' : 'combined';
 app.use(morgan(morganFormat, { stream: { write: message => logger.info(message.trim()) } }));
@@ -71,8 +108,8 @@ app.get('/api/health', (req, res) => {
 
 
 app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/superadmin', adminRoutes);
-app.use('/api/documents', documentsRoutes);
+app.use('/api/superadmin', apiLimiter, adminRoutes);
+app.use('/api/documents', apiLimiter, documentsRoutes);
 
 
 app.use(errorMiddleware);

@@ -86,7 +86,7 @@ blockchain/.anchor/
 .agents/
 remove_comments.js
 strip_comments.js
-seed_superadmin.js
+**/seed_superadmin.js
 
 # Application Logs
 logs/

@@ -48,7 +48,7 @@ const logger = require('./utils/logger');
 const app = express();
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',') 
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim().replace(/^["']|["']$/g, '')) 
   : ['http://localhost:5173', 'http://localhost:3000'];
 
 app.use(cors({

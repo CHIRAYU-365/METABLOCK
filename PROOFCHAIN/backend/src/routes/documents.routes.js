@@ -14,6 +14,13 @@ const uploadLimiter = rateLimit({
   message: { error: 'Upload rate limit exceeded. Please wait an hour before uploading more.' }
 });
 
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: 'Too many requests from this IP, please try again after 15 minutes.' }
+});
+
+router.use(apiLimiter);
 router.use(authenticateToken);
 
 router.post('/upload', requireRole(['ADMIN']), uploadLimiter, upload.single('file'), documentsController.upload);

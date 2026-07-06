@@ -4,8 +4,17 @@ const auditController = require('../controllers/audit.controller');
 const { authenticateToken, requireRole } = require('../middlewares/auth.middleware');
 const { z } = require('zod');
 const validate = require('../middlewares/validate.middleware');
+const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: 'Too many requests from this IP, please try again after 15 minutes.' }
+});
+
+router.use(apiLimiter);
 
 const statusUpdateSchema = z.object({
   body: z.object({

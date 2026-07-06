@@ -13,7 +13,7 @@ The METABLOCK workspace is structured as follows:
 ```
 METABLOCK/
 ├── PROOFCHAIN.md         # Full systems & architecture specification for ProofChain
-├── security.md           # Comprehensive Threat Model, Security Controls, and Defense Guide
+├── SECURITY.md           # Comprehensive Threat Model, Security Controls, and Defense Guide
 ├── README.md             # Workspace overview (This file)
 └── PROOFCHAIN/           # ProofChain Application Workspace
     ├── frontend/         # Vite + React client app (Client-side hashing, QR scanning, PWA)
@@ -44,7 +44,7 @@ For the full detailed specifications, refer to [PROOFCHAIN.md](file:///c:/Users/
 
 ## 🛡️ Security & Defense Architecture
 
-The METABLOCK workspace is designed with security as a core pillar. A comprehensive breakdown of how the platform defends against threats—ranging from Sybil attacks on-chain to Cross-Site Scripting (XSS), Parameter Pollution, and Denial of Service (DoS) attacks on the backend—is available in [security.md](file:///c:/Users/chira/OneDrive/ドキュメント/METABLOCK/METABLOCK/security.md).
+The METABLOCK workspace is designed with security as a core pillar. A comprehensive breakdown of how the platform defends against threats—ranging from Sybil attacks on-chain to Cross-Site Scripting (XSS), Parameter Pollution, and Denial of Service (DoS) attacks on the backend—is available in [SECURITY.md](file:///c:/Users/chira/OneDrive/ドキュメント/METABLOCK/METABLOCK/SECURITY.md).
 
 ---
 

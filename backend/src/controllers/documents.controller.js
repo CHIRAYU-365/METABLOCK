@@ -7,12 +7,25 @@ const prisma = new PrismaClient();
 const upload = async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
   
-  const { docHash, recipientEmail, aiDocType, aiKeywords, requireMultiSig, txData } = req.body;
+  const recipientEmail = req.body.recipientEmail || req.body.ownerEmail;
   if (!docHash) return res.status(400).json({ error: "Missing docHash from client" });
-  if (!recipientEmail) return res.status(400).json({ error: "Missing recipientEmail" });
-  
-  const recipient = await prisma.user.findUnique({ where: { email: recipientEmail } });
-  if (!recipient) return res.status(404).json({ error: "Recipient user not found" });
+  if (!recipientEmail) return res.status(400).json({ error: "Missing recipient email address" });
+
+  let recipient = await prisma.user.findUnique({ where: { email: recipientEmail } });
+  if (!recipient) {
+    const bcrypt = require('bcryptjs');
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash('DefaultUserPass123!', salt);
+    recipient = await prisma.user.create({
+      data: {
+        username: recipientEmail.split('@')[0] + '_' + Math.floor(Math.random() * 1000),
+        email: recipientEmail,
+        passwordHash,
+        role: 'USER',
+        status: 'ACTIVE'
+      }
+    });
+  }
 
   const existingRequest = await prisma.documentRequest.findUnique({ where: { docHash } });
   if (existingRequest) {
@@ -58,7 +71,9 @@ const upload = async (req, res) => {
   await auditService.logAction(req.user.id, 'DOCUMENT_UPLOADED', `Uploaded document ${req.file.originalname}`, req.ip);
 
   
-  emailService.sendVerificationEmail(recipient.email, req.file.originalname, docHash).catch(console.error);
+  emailService.sendVerificationEmail(recipient.email, req.file.originalname, docHash)
+    .then(info => console.log(`Recipient email dispatched to ${recipient.email}`))
+    .catch(err => console.error(`Failed to dispatch email to ${recipient.email}:`, err.message));
 
   res.status(201).json({ 
     message: "Upload successful", 

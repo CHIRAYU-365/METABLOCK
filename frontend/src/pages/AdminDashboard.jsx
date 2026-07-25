@@ -44,7 +44,7 @@ const AdminDashboard = () => {
   const checkRevocationStatuses = async () => {
     const statuses = {};
     try {
-      const rpcUrl = await detectRpcEndpoint();
+      const rpcUrl = SOLANA_RPC_ENDPOINT;
       const connection = new Connection(rpcUrl, 'confirmed');
       for (const doc of documents) {
         try {
@@ -291,10 +291,11 @@ const AdminDashboard = () => {
                 required
                 value={recipientEmail}
                 onChange={e => setRecipientEmail(e.target.value)}
-                placeholder="user@example.com"
+                placeholder="Type target recipient email address..."
+                className="input-field"
               />
             </div>
-            <div className="drop-zone" style={{ padding: '2rem' }}>
+            <div className="drop-zone" style={{ padding: '2rem', position: 'relative', overflow: 'hidden' }}>
               <input 
                 type="file" 
                 onChange={e => setFile(e.target.files[0])} 

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Shield, Zap, Lock, FileCheck, ArrowRight, ChevronDown, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -19,21 +19,38 @@ const Home = () => {
   const [username, setUsername] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   
-  const { login, register, user, linkWallet } = useAuth();
+  const { login, register, user, logout, linkWallet } = useAuth();
   const wallet = useWallet();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Watch for both conditions to be met
+  const handleGetStarted = () => {
+    logout();
+    if (wallet.connected) {
+      wallet.disconnect();
+    }
+    setEmail('');
+    setPassword('');
+    setUsername('');
+    setShowAuthModal(true);
+  };
+
+  useEffect(() => {
+    if (location.pathname === '/login') {
+      handleGetStarted();
+    }
+  }, [location.pathname]);
+
   useEffect(() => {
     if (user && wallet.connected && showAuthModal) {
       const verifyWallet = async () => {
         try {
           await linkWallet(wallet.publicKey.toString());
-          toast.success("Zero-Trust Verification Complete");
+          toast.success("Zero-Trust Dual Verification Complete");
           setShowAuthModal(false);
           navigate('/dashboard');
         } catch (err) {
-          toast.error(err.response?.data?.error || "Failed to verify wallet");
+          toast.error(err.response?.data?.error || "Wallet mismatch! Connected wallet does not match registered account.");
           wallet.disconnect(); 
         }
       };
@@ -47,8 +64,10 @@ const Home = () => {
     try {
       if (isRegistering) {
         await register(username, email, password);
+        toast.success("Web2 Identity Registered! Proceed to Web3 Wallet Verification.");
       } else {
         await login(email, password);
+        toast.success("Web2 Identity Verified! Proceed to Web3 Wallet Verification.");
       }
     } catch (err) {
       toast.error(err.response?.data?.error || 'Authentication failed');
@@ -83,7 +102,7 @@ const Home = () => {
           <div className="card-glow animate-scale-in" style={styles.modalContent}>
             <button style={styles.closeBtn} onClick={() => setShowAuthModal(false)}><X size={24} /></button>
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <div style={styles.logoIcon}><span style={styles.logoGlyph}>P</span></div>
+              <div style={styles.logoIcon}><img src="/logo.png" alt="ProofChain Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>
               <h2 style={{ marginTop: '1rem', color: 'var(--text-primary)' }}>Secure Portal Access</h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Strict Zero-Trust Network Access (ZTNA) Policy Enforced</p>
             </div>
@@ -190,7 +209,7 @@ const Home = () => {
           </p>
 
           <div style={styles.heroCtas} className="animate-fade-in-delay-3">
-            <button onClick={() => setShowAuthModal(true)} className="btn-primary" style={{ ...styles.ctaBtn, padding: '16px 40px', fontSize: '1.2rem' }}>
+            <button onClick={handleGetStarted} className="btn-primary" style={{ ...styles.ctaBtn, padding: '16px 40px', fontSize: '1.2rem' }}>
               Get Started
               <ArrowRight size={20} />
             </button>
@@ -354,15 +373,15 @@ const steps = [
 ];
 
 const styles = {
-  
   modalOverlay: {
     position: 'fixed',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    backdropFilter: 'blur(10px)',
+    background: 'rgba(3, 3, 6, 0.75)',
+    backdropFilter: 'blur(20px) saturate(1.8)',
+    WebkitBackdropFilter: 'blur(20px) saturate(1.8)',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
@@ -370,26 +389,45 @@ const styles = {
     padding: '1rem',
   },
   modalContent: {
-    background: '#0c0c10',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '16px',
+    background: 'rgba(12, 12, 18, 0.92)',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
+    borderRadius: '24px',
     padding: '2.5rem',
-    width: '100%',
-    maxWidth: '450px',
+    width: '90%',
+    maxWidth: '480px',
     position: 'relative',
-    boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 240, 255, 0.15)',
     display: 'flex',
     flexDirection: 'column',
   },
+  logoIcon: {
+    width: '72px',
+    height: '72px',
+    margin: '0 auto',
+    borderRadius: '16px',
+    background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(139, 92, 246, 0.15))',
+    border: '1px solid rgba(0, 240, 255, 0.3)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 0 30px rgba(0, 240, 255, 0.25)',
+    padding: '8px'
+  },
   closeBtn: {
     position: 'absolute',
-    top: '1rem',
-    right: '1rem',
-    background: 'transparent',
+    top: '1.25rem',
+    right: '1.25rem',
+    background: 'rgba(255, 255, 255, 0.05)',
     color: 'var(--text-muted)',
-    border: 'none',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '50%',
+    width: '32px',
+    height: '32px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     cursor: 'pointer',
-    padding: '4px'
+    transition: 'all 0.2s ease'
   },
   stepContainer: {
     display: 'flex',
@@ -397,9 +435,9 @@ const styles = {
     width: '100%',
   },
   authStep: {
-    background: 'rgba(255, 255, 255, 0.02)',
-    border: '1px solid var(--border-subtle)',
-    borderRadius: '12px',
+    background: 'rgba(255, 255, 255, 0.03)',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    borderRadius: '16px',
     padding: '1.5rem',
     transition: 'all 0.3s ease',
     width: '100%'
@@ -424,14 +462,16 @@ const styles = {
   },
   modalInput: {
     width: '100%',
-    padding: '12px 16px',
+    padding: '14px 18px',
     marginBottom: '1rem',
-    background: 'rgba(0, 0, 0, 0.3)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '8px',
-    color: 'var(--text-primary)',
-    fontFamily: 'Space Grotesk, sans-serif',
+    background: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
+    borderRadius: '12px',
+    color: '#F0F0F5',
+    fontSize: '0.95rem',
+    fontFamily: 'Outfit, sans-serif',
     outline: 'none',
+    boxSizing: 'border-box'
   },
   
   hero: {

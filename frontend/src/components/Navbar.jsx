@@ -39,7 +39,7 @@ const Navbar = () => {
           {}
           <Link to="/" style={styles.logoLink}>
             <div style={styles.logoIcon}>
-              <span style={styles.logoGlyph}>P</span>
+              <img src="/logo.png" alt="ProofChain Logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} />
             </div>
             <span style={styles.logoText}>ProofChain</span>
           </Link>

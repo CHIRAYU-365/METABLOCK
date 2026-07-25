@@ -2,6 +2,7 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import * as anchor from '@coral-xyz/anchor';
 import { Buffer } from 'buffer';
 export const SOLANA_RPC_ENDPOINT = import.meta.env.VITE_SOLANA_RPC_ENDPOINT || "https://api.devnet.solana.com";
+export const detectRpcEndpoint = async () => SOLANA_RPC_ENDPOINT;
 
 export const PROGRAM_ID = new PublicKey("FikMPetL3GTukxxgX2AAgqv7aYfrMisbzNwvzHgxqmKb");
 

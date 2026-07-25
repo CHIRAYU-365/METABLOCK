@@ -466,7 +466,7 @@ const styles = {
     textAlign: 'center',
     position: 'relative',
     cursor: 'pointer',
-    background: 'rgba(0, 0, 0, 0.15)',
+    background: 'var(--bg-elevated)',
     transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
   },
   dropZoneActive: {
@@ -533,7 +533,7 @@ const styles = {
     marginTop: '1rem',
     padding: '1rem',
     borderRadius: 'var(--radius-md)',
-    background: 'rgba(0, 0, 0, 0.2)',
+    background: 'var(--bg-elevated)',
     border: '1px solid var(--border-subtle)'
   },
   zkRow: {

@@ -95,7 +95,10 @@ const AdminDashboard = () => {
     e.preventDefault();
     if (!file) return toast.error("Please select a file");
     if (!recipientEmail) return toast.error("Please enter the recipient's email");
-    if (!wallet.connected) return toast.error("Please connect your Solana wallet first");
+    if (!wallet.connected || !wallet.publicKey) return toast.error("Please connect your Solana wallet (Phantom) first");
+    if (wallet.wallet?.adapter?.name?.toLowerCase().includes('metamask')) {
+      return toast.error("ProofChain runs on Solana. Please disconnect MetaMask and select Phantom Wallet.");
+    }
     setUploading(true);
     try {
       const docHash = await calculateSHA256(file);
@@ -284,24 +287,50 @@ const AdminDashboard = () => {
             Select a file and assign it to a user. Stored on IPFS and registered on Solana.
           </p>
           <form onSubmit={handleUpload}>
-            <div className="input-group">
-              <label>Recipient Email</label>
+            <div className="input-group" style={{ marginBottom: '1.5rem', position: 'relative', zIndex: 10 }}>
+              <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Recipient Email Address
+              </label>
               <input 
                 type="email" 
                 required
                 value={recipientEmail}
                 onChange={e => setRecipientEmail(e.target.value)}
-                placeholder="Type target recipient email address..."
-                className="input-field"
+                placeholder="e.g. recipient@domain.com"
+                style={{
+                  width: '100%',
+                  padding: '14px 18px',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1.5px solid rgba(0, 240, 255, 0.4)',
+                  borderRadius: '12px',
+                  color: '#FFFFFF',
+                  fontSize: '1rem',
+                  fontFamily: 'Outfit, sans-serif',
+                  outline: 'none',
+                  cursor: 'text',
+                  position: 'relative',
+                  zIndex: 10,
+                  boxSizing: 'border-box',
+                  boxShadow: '0 0 15px rgba(0, 240, 255, 0.1)'
+                }}
               />
             </div>
-            <div className="drop-zone" style={{ padding: '2rem', position: 'relative', overflow: 'hidden' }}>
+            <div className="drop-zone" style={{ padding: '1.5rem', position: 'relative', overflow: 'hidden', marginTop: '1rem', border: '2px dashed rgba(255, 255, 255, 0.15)', borderRadius: '12px' }}>
               <input 
                 type="file" 
                 onChange={e => setFile(e.target.files[0])} 
-                style={styles.fileInput}
+                style={{
+                  opacity: 0,
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  cursor: 'pointer',
+                  zIndex: 5
+                }}
               />
-              <div style={{ color: file ? 'var(--neon-cyan)' : 'var(--text-muted)', fontWeight: 500 }}>
+              <div style={{ color: file ? 'var(--neon-cyan)' : 'var(--text-muted)', fontWeight: 500, textAlign: 'center', pointerEvents: 'none' }}>
                 {file ? file.name : "Click or drag file to upload"}
               </div>
             </div>

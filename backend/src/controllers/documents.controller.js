@@ -7,19 +7,20 @@ const prisma = new PrismaClient();
 const upload = async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
   
-  const recipientEmail = req.body.recipientEmail || req.body.ownerEmail;
+  const { docHash, recipientEmail, ownerEmail, aiDocType, aiKeywords, requireMultiSig, txData } = req.body;
+  const targetEmail = recipientEmail || ownerEmail;
   if (!docHash) return res.status(400).json({ error: "Missing docHash from client" });
-  if (!recipientEmail) return res.status(400).json({ error: "Missing recipient email address" });
+  if (!targetEmail) return res.status(400).json({ error: "Missing recipient email address" });
 
-  let recipient = await prisma.user.findUnique({ where: { email: recipientEmail } });
+  let recipient = await prisma.user.findUnique({ where: { email: targetEmail } });
   if (!recipient) {
     const bcrypt = require('bcryptjs');
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash('DefaultUserPass123!', salt);
     recipient = await prisma.user.create({
       data: {
-        username: recipientEmail.split('@')[0] + '_' + Math.floor(Math.random() * 1000),
-        email: recipientEmail,
+        username: targetEmail.split('@')[0] + '_' + Math.floor(Math.random() * 1000),
+        email: targetEmail,
         passwordHash,
         role: 'USER',
         status: 'ACTIVE'

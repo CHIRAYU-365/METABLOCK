@@ -1,17 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Shield, Zap, Lock, FileCheck, ArrowRight, ChevronDown, X } from 'lucide-react';
+import { 
+  Shield, Zap, Lock, FileCheck, ArrowRight, ChevronDown, X, 
+  CheckCircle, Database, Cpu, Globe, Key, FileCode, Search, HelpCircle, ChevronUp, RefreshCw
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import toast from 'react-hot-toast';
+import anime from 'animejs';
+import ThreeCanvas from '../components/ThreeCanvas';
+import ThemeToggle from '../components/ThemeToggle';
+import { calculateSHA256 } from '../utils/hash';
 
 const Home = () => {
-  const [counters, setCounters] = useState({ docs: 0, txns: 0, uptime: 0 });
-  const heroRef = useRef(null);
-  const statsRef = useRef(null);
-  const featuresRef = useRef(null);
-  
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState('');
@@ -19,6 +21,11 @@ const Home = () => {
   const [username, setUsername] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   
+  const [activeFaq, setActiveFaq] = useState(null);
+
+  const heroRef = useRef(null);
+  const statsRef = useRef(null);
+
   const { login, register, user, logout, linkWallet } = useAuth();
   const wallet = useWallet();
   const navigate = useNavigate();
@@ -58,6 +65,35 @@ const Home = () => {
     }
   }, [user, wallet.connected, showAuthModal, navigate, wallet.publicKey]);
 
+  useEffect(() => {
+    anime({
+      targets: '.hero-anime',
+      translateY: [40, 0],
+      opacity: [0, 1],
+      delay: anime.stagger(120, { start: 200 }),
+      duration: 1000,
+      easing: 'easeOutCubic'
+    });
+
+    anime({
+      targets: '.feature-card-anime',
+      scale: [0.95, 1],
+      opacity: [0, 1],
+      delay: anime.stagger(100, { start: 600 }),
+      duration: 800,
+      easing: 'easeOutQuad'
+    });
+
+    anime({
+      targets: '.stat-card-anime',
+      translateY: [20, 0],
+      opacity: [0, 1],
+      delay: anime.stagger(100, { start: 500 }),
+      duration: 800,
+      easing: 'easeOutCubic'
+    });
+  }, []);
+
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     setAuthLoading(true);
@@ -76,40 +112,25 @@ const Home = () => {
     }
   };
 
-  
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    const sections = document.querySelectorAll('.reveal-section');
-    sections.forEach(s => observer.observe(s));
-    return () => sections.forEach(s => observer.unobserve(s));
-  }, []);
+  const toggleFaq = (index) => {
+    setActiveFaq(activeFaq === index ? null : index);
+  };
 
   return (
     <div style={{ overflow: 'hidden', height: showAuthModal ? '100vh' : 'auto' }}>
-      {}
       {showAuthModal && (
         <div style={styles.modalOverlay}>
           <div className="card-glow animate-scale-in" style={styles.modalContent}>
-            <button style={styles.closeBtn} onClick={() => setShowAuthModal(false)}><X size={24} /></button>
+            <button style={styles.closeBtn} onClick={() => setShowAuthModal(false)}><X size={20} /></button>
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
               <div style={styles.logoIcon}><img src="/logo.png" alt="ProofChain Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>
               <h2 style={{ marginTop: '1rem', color: 'var(--text-primary)' }}>Secure Portal Access</h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Strict Zero-Trust Network Access (ZTNA) Policy Enforced</p>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Strict Zero-Trust Network Access (ZTNA) Policy Enforced</p>
             </div>
             
             <div style={styles.stepContainer}>
               {!user ? (
-                                <div style={{ ...styles.authStep, opacity: 1 }} className="animate-fade-in">
+                <div style={{ ...styles.authStep, opacity: 1 }}>
                   <div style={styles.stepHeader}>
                     <div style={{ ...styles.authStepNumber, background: 'var(--neon-cyan)' }}>1</div>
                     <h4 style={{ margin: 0, fontSize: '1rem' }}>Identity Verification (Web2)</h4>
@@ -153,24 +174,24 @@ const Home = () => {
                   </form>
                 </div>
               ) : (
-                                <div style={{ ...styles.authStep, opacity: 1 }} className="animate-fade-in">
+                <div style={{ ...styles.authStep, opacity: 1 }}>
                   <div style={styles.stepHeader}>
                     <div style={{ ...styles.authStepNumber, background: wallet.connected ? 'var(--neon-green)' : 'var(--neon-violet)' }}>2</div>
                     <h4 style={{ margin: 0, fontSize: '1rem' }}>Cryptographic Verification (Web3)</h4>
                   </div>
                   {!wallet.connected ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '1rem 0' }}>
-                      <div style={{ padding: '0.75rem 1.5rem', background: 'rgba(0, 255, 170, 0.1)', border: '1px solid var(--neon-green)', borderRadius: '8px', color: 'var(--neon-green)', textAlign: 'center', width: '100%', marginBottom: '1rem' }}>
+                      <div style={{ padding: '0.75rem 1.5rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--neon-green)', borderRadius: '8px', color: 'var(--neon-green)', textAlign: 'center', width: '100%', marginBottom: '1rem' }}>
                         ✓ Web2 Identity Verified ({user.email})
                       </div>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>Connect your Solana wallet to complete authorization.</p>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>Connect your Solana Phantom wallet to complete authorization.</p>
                       <WalletMultiButton style={{ background: 'var(--neon-violet)' }} />
                     </div>
                   ) : (
-                    <div style={{ padding: '1.5rem', background: 'rgba(0, 255, 170, 0.1)', border: '1px solid var(--neon-green)', borderRadius: '8px', color: 'var(--neon-green)', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
+                    <div style={{ padding: '1.5rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--neon-green)', borderRadius: '8px', color: 'var(--neon-green)', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
                       <Shield size={32} />
                       <strong>✓ Fully Authorized</strong>
-                      <span style={{ fontSize: '0.8rem', color: 'rgba(0, 255, 170, 0.8)' }}>Redirecting to Secure Portal...</span>
+                      <span style={{ fontSize: '0.8rem', color: 'rgba(16, 185, 129, 0.8)' }}>Redirecting to Secure Portal...</span>
                     </div>
                   )}
                 </div>
@@ -180,151 +201,204 @@ const Home = () => {
         </div>
       )}
 
-      <div style={{ filter: showAuthModal ? 'blur(10px) brightness(0.4)' : 'none', transition: 'all 0.3s ease' }}>
-      {}
-      <section ref={heroRef} style={styles.hero}>
-        {}
-        <div style={styles.gridBg} />
-        
-        {}
-        <div style={{ ...styles.orb, ...styles.orb1 }} />
-        <div style={{ ...styles.orb, ...styles.orb2 }} />
-        <div style={{ ...styles.orb, ...styles.orb3 }} />
+      <div style={{ filter: showAuthModal ? 'blur(10px) brightness(0.4)' : 'none', transition: 'all 0.3s ease', position: 'relative' }}>
+        <ThreeCanvas />
 
-        <div style={styles.heroContent} className="animate-fade-in">
-          <div style={styles.heroBadge} className="animate-fade-in-delay-1">
-            <span style={styles.pulseDot} />
-            <span>Powered by Solana Blockchain</span>
+        <header style={{
+          position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '1.25rem 2.5rem', maxWidth: '1280px', margin: '0 auto'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img src="/logo.png" alt="ProofChain Logo" style={{ width: '36px', height: '36px', borderRadius: '10px', objectFit: 'contain' }} />
+            <span style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '1.25rem', color: 'var(--text-primary)' }}>ProofChain</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <ThemeToggle showLabel={true} />
+            <button onClick={handleGetStarted} className="btn-primary" style={{ padding: '8px 22px', fontSize: '0.9rem' }}>
+              Sign In
+            </button>
+          </div>
+        </header>
+
+        <section ref={heroRef} style={styles.hero}>
+          <div style={styles.heroContent}>
+            <div className="hero-anime" style={styles.heroBadge}>
+              <span style={styles.pulseDot} />
+              <span>Solana Blockchain • IPFS Persistence • ZTNA Security</span>
+            </div>
+
+            <h1 className="hero-anime" style={styles.heroTitle}>
+              Decentralized Trust for<br />
+              <span className="gradient-text">Verifiable Digital Credentials</span>
+            </h1>
+
+            <p className="hero-anime" style={styles.heroSubtitle}>
+              ProofChain provides institutional-grade document notarization combining sub-second Solana block speed, 
+              IPFS content-addressed storage, and a strict Zero-Trust Network Access identity bridge.
+            </p>
+
+            <div className="hero-anime" style={styles.heroCtas}>
+              <button onClick={handleGetStarted} className="btn-primary" style={{ ...styles.ctaBtn, padding: '16px 40px', fontSize: '1.15rem' }}>
+                Get Started
+                <ArrowRight size={20} />
+              </button>
+              <Link to="/verify" className="btn-outline" style={{ ...styles.ctaBtn, padding: '16px 36px', fontSize: '1.15rem' }}>
+                <Search size={20} />
+                Public Verifier
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section style={styles.statsSection}>
+          <div style={styles.statsGrid}>
+            <div className="card-glow stat-card-anime" style={styles.statCard}>
+              <h3 style={styles.statNumber}>10x</h3>
+              <p style={styles.statLabel}>Faster Verification</p>
+            </div>
+            <div className="card-glow stat-card-anime" style={styles.statCard}>
+              <h3 style={styles.statNumber}>100%</h3>
+              <p style={styles.statLabel}>Cryptographic Certainty</p>
+            </div>
+            <div className="card-glow stat-card-anime" style={styles.statCard}>
+              <h3 style={styles.statNumber}>0</h3>
+              <p style={styles.statLabel}>Knowledge Leaks</p>
+            </div>
+            <div className="card-glow stat-card-anime" style={styles.statCard}>
+              <h3 style={styles.statNumber}>&lt; 1s</h3>
+              <p style={styles.statLabel}>Solana Consensus</p>
+            </div>
+          </div>
+        </section>
+
+        <section style={styles.featuresSection}>
+          <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
+            <h2 style={{ marginBottom: '1rem' }}>
+              Built for <span className="gradient-text">Institutional Trust</span>
+            </h2>
+            <p style={{ maxWidth: '650px', margin: '0 auto', color: 'var(--text-secondary)' }}>
+              ProofChain fuses enterprise database reliability with decentralized Web3 immutability.
+            </p>
           </div>
 
-          <h1 style={styles.heroTitle}>
-            Immutable Document<br />
-            <span className="gradient-text">Verification</span>
-          </h1>
+          <div style={styles.featuresGrid}>
+            {features.map((f, i) => (
+              <div key={f.title} className="card-glow feature-card-anime" style={styles.featureCard}>
+                <div style={{ ...styles.featureIcon, background: f.iconBg }}>{f.icon}</div>
+                <h3 style={styles.featureTitle}>{f.title}</h3>
+                <p style={styles.featureDesc}>{f.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
 
-          <p style={styles.heroSubtitle} className="animate-fade-in-delay-2">
-            Cryptographically secure document notarization on Solana. 
-            Zero-knowledge proofs ensure privacy while maintaining 
-            verifiable authenticity on an immutable ledger.
-          </p>
+        <section style={styles.archSection}>
+          <div style={styles.archContainer}>
+            <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+              <span className="badge badge-violet" style={{ marginBottom: '0.75rem' }}>Technical Deep Dive</span>
+              <h2>Cryptographic Architecture Pillars</h2>
+            </div>
 
-          <div style={styles.heroCtas} className="animate-fade-in-delay-3">
-            <button onClick={handleGetStarted} className="btn-primary" style={{ ...styles.ctaBtn, padding: '16px 40px', fontSize: '1.2rem' }}>
-              Get Started
+            <div style={styles.pillarsGrid}>
+              <div style={styles.pillarCard} className="card-glow">
+                <Shield size={28} color="var(--neon-cyan)" />
+                <h4>ZTNA Identity Bridge</h4>
+                <p>Enforces a 1-to-1 database binding between Web2 email credentials and Solana Ed25519 public key addresses, evicting unauthenticated sessions automatically.</p>
+              </div>
+              <div style={styles.pillarCard} className="card-glow">
+                <Database size={28} color="var(--neon-violet)" />
+                <h4>Pinata IPFS Network</h4>
+                <p>Document binaries are pinned across distributed IPFS storage nodes with content-addressed CIDs, guaranteeing metadata persistence without central storage points.</p>
+              </div>
+              <div style={styles.pillarCard} className="card-glow">
+                <Cpu size={28} color="var(--neon-pink)" />
+                <h4>Anchor PDA Program</h4>
+                <p>Smart contract Program Derived Addresses (PDAs) store document verification flags deterministically using SHA-256 seeds on Solana's high-speed ledger.</p>
+              </div>
+              <div style={styles.pillarCard} className="card-glow">
+                <Lock size={28} color="var(--neon-green)" />
+                <h4>Dual-Layer Revocation</h4>
+                <p>Combines immediate sub-second IPFS metadata key-value soft locking with permanent on-chain Anchor state revocation signatures for full lifecycle control.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section style={styles.useCasesSection}>
+          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+            <span className="badge badge-cyan" style={{ marginBottom: '0.75rem' }}>Versatile Deployment</span>
+            <h2>Enterprise & Academic Use Cases</h2>
+          </div>
+
+          <div style={styles.useCaseGrid}>
+            <div className="card-glow" style={styles.useCaseCard}>
+              <Globe size={24} color="var(--neon-cyan)" />
+              <h4>University & Academic Degrees</h4>
+              <p>Issue immutable digital diplomas directly to student profiles. Employers verify authenticity in seconds without contacting registrar offices.</p>
+            </div>
+            <div className="card-glow" style={styles.useCaseCard}>
+              <Key size={24} color="var(--neon-violet)" />
+              <h4>Enterprise Legal Contracts</h4>
+              <p>Notarize multi-signature corporate agreements on Solana. Require Super Admin approval before settlements are permanently minted.</p>
+            </div>
+            <div className="card-glow" style={styles.useCaseCard}>
+              <FileCheck size={24} color="var(--neon-pink)" />
+              <h4>Government & Audit Compliance</h4>
+              <p>Maintain verifiable audit trails for compliance certificates, environmental reports, and regulatory filings with Zero-Knowledge verification.</p>
+            </div>
+          </div>
+        </section>
+
+        <section style={styles.faqSection}>
+          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+            <span className="badge badge-amber" style={{ marginBottom: '0.75rem' }}>Help Center</span>
+            <h2>Frequently Asked Questions</h2>
+          </div>
+
+          <div style={styles.faqList}>
+            {faqs.map((faq, idx) => (
+              <div key={idx} className="card-glow" style={styles.faqItem} onClick={() => toggleFaq(idx)}>
+                <div style={styles.faqQuestion}>
+                  <span>{faq.q}</span>
+                  {activeFaq === idx ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                </div>
+                {activeFaq === idx && (
+                  <div style={styles.faqAnswer}>
+                    <p>{faq.a}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section style={styles.ctaSection}>
+          <div className="card-glow" style={styles.ctaBanner}>
+            <h2>Ready to experience <span className="gradient-text">Zero Trust Verification</span>?</h2>
+            <p style={{ color: 'var(--text-secondary)', margin: '1rem auto 2rem', maxWidth: '550px' }}>
+              Join institutions and enterprise organizations managing tamper-proof credentials on Solana.
+            </p>
+            <button onClick={handleGetStarted} className="btn-primary" style={{ padding: '16px 40px', fontSize: '1.15rem' }}>
+              Launch Secure Portal
               <ArrowRight size={20} />
             </button>
           </div>
-        </div>
+        </section>
 
-        {}
-        <div style={styles.scrollIndicator} className="animate-fade-in-delay-3">
-          <ChevronDown size={20} style={{ animation: 'float 2s ease-in-out infinite' }} />
-        </div>
-      </section>
-
-
-      {}
-      <section ref={featuresRef} style={styles.featuresSection}>
-        <div className="reveal-section" style={{ textAlign: 'center', marginBottom: '4rem' }}>
-          <h2 style={{ marginBottom: '1rem' }}>
-            Why <span className="gradient-text">ProofChain</span>?
-          </h2>
-          <p style={{ maxWidth: '600px', margin: '0 auto', color: 'var(--text-secondary)' }}>
-            Enterprise-grade document verification built on decentralized infrastructure.
-            Every document gets a unique cryptographic fingerprint stored forever on-chain.
-          </p>
-        </div>
-
-        <div style={styles.featuresGrid}>
-          {features.map((f, i) => (
-            <div
-              key={f.title}
-              className="card-glow reveal-section"
-              style={{ ...styles.featureCard, animationDelay: `${i * 0.1}s` }}
-            >
-              <div style={{ ...styles.featureIcon, background: f.iconBg }}>
-                {f.icon}
-              </div>
-              <h3 style={styles.featureTitle}>{f.title}</h3>
-              <p style={styles.featureDesc}>{f.description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {}
-      <section style={styles.howSection}>
-        <div className="reveal-section" style={{ textAlign: 'center', marginBottom: '4rem' }}>
-          <h2 style={{ marginBottom: '1rem' }}>
-            How It <span className="gradient-text">Works</span>
-          </h2>
-        </div>
-
-        <div style={styles.stepsGrid}>
-          {steps.map((step, i) => (
-            <div key={i} className="reveal-section" style={styles.stepItem}>
-              <div style={styles.stepNumber}>
-                <span className="gradient-text" style={{ fontSize: '1.5rem', fontWeight: '800' }}>
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-              </div>
-              <h4 style={{ marginBottom: '0.5rem' }}>{step.title}</h4>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                {step.desc}
+        <footer style={styles.footer}>
+          <div style={styles.footerContent}>
+            <div>
+              <h3 className="gradient-text" style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>ProofChain</h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Decentralized Document Verification Platform
               </p>
-              {i < steps.length - 1 && (
-                <div style={styles.stepConnector} />
-              )}
             </div>
-          ))}
-        </div>
-      </section>
-
-      {}
-      <section style={styles.ctaSection}>
-        <div className="card-glow reveal-section" style={styles.ctaBanner}>
-          <h2 style={{ marginBottom: '1rem' }}>
-            Ready to verify with <span className="gradient-text">zero trust</span>?
-          </h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', maxWidth: '500px', margin: '0 auto 2rem' }}>
-            Upload any document and verify its authenticity against the Solana blockchain in seconds. 
-            No account required.
-          </p>
-          <Link to="/verify" className="btn-primary" style={{ ...styles.ctaBtn, fontSize: '1.05rem' }}>
-            <Shield size={20} />
-            Start Verifying
-            <ArrowRight size={18} />
-          </Link>
-        </div>
-      </section>
-
-      {}
-      <footer style={styles.footer}>
-        <div style={styles.footerContent}>
-          <div>
-            <h3 className="gradient-text" style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>ProofChain</h3>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Blockchain Document Verification Platform
-            </p>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Solana Blockchain • Pinata IPFS • ZTNA Protocol
+            </div>
           </div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Built on Solana • Secured by Cryptography • Powered by IPFS
-          </div>
-        </div>
-      </footer>
-
-      <style>{`
-        .reveal-section {
-          opacity: 0;
-          transform: translateY(30px);
-          transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
-                      transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .reveal-section.visible {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      `}</style>
+        </footer>
       </div>
     </div>
   );
@@ -332,405 +406,167 @@ const Home = () => {
 
 const features = [
   {
-    icon: <Shield size={24} color="#00F0FF" />,
+    icon: <Shield size={24} color="var(--neon-cyan)" />,
     iconBg: 'rgba(0, 240, 255, 0.1)',
-    title: 'Zero-Knowledge Proofs',
-    description: 'Verify document authenticity without revealing sensitive content using cryptographic selective disclosure.'
+    title: 'Zero-Knowledge Privacy',
+    description: 'Cryptographic SHA-256 hashing allows verification without exposing sensitive document content or personal user data.'
   },
   {
-    icon: <Lock size={24} color="#8B5CF6" />,
+    icon: <Lock size={24} color="var(--neon-violet)" />,
     iconBg: 'rgba(139, 92, 246, 0.1)',
-    title: 'IPFS Decentralized Storage',
-    description: 'Documents are pinned on IPFS with content-addressed hashing — immutable, distributed, and permanent.'
+    title: 'IPFS Content-Addressing',
+    description: 'Document files are pinned across Pinata IPFS node clusters, ensuring decentralized persistence and immutable content identifiers.'
   },
   {
-    icon: <Zap size={24} color="#EC4899" />,
+    icon: <Zap size={24} color="var(--neon-pink)" />,
     iconBg: 'rgba(236, 72, 153, 0.1)',
-    title: 'Solana Speed',
-    description: 'Sub-second finality with Solana\'s 400ms block times. Verify documents in real-time across the globe.'
+    title: 'Sub-Second Solana Speed',
+    description: 'Leverages Solana\'s 400ms block times to confirm and verify credential records instantly anywhere on earth.'
   },
   {
-    icon: <FileCheck size={24} color="#10B981" />,
+    icon: <FileCheck size={24} color="var(--neon-green)" />,
     iconBg: 'rgba(16, 185, 129, 0.1)',
-    title: 'Tamper-Proof Records',
-    description: 'SHA-256 document hashes stored on-chain create an unforgeable audit trail for every credential issued.'
+    title: 'Dual-Layer Revocation',
+    description: 'Soft-lock document access in real-time via IPFS metadata key-values or permanently revoke on-chain via Anchor smart contract.'
   }
 ];
 
-const steps = [
+const faqs = [
   {
-    title: 'Upload Document',
-    desc: 'An admin uploads the document. A SHA-256 hash is computed client-side — the file never leaves your browser.'
+    q: 'What makes ProofChain different from traditional databases?',
+    a: 'Traditional databases are controlled by a single party and susceptible to internal tampering or data loss. ProofChain stores verification hashes on the immutable Solana blockchain and raw files on IPFS, providing mathematically guaranteed proof of authenticity.'
   },
   {
-    title: 'Blockchain Registration',
-    desc: 'The document hash and IPFS CID are written to a Solana Program Derived Address (PDA) via Anchor.'
+    q: 'Does ProofChain store my actual private document on the public blockchain?',
+    a: 'No. ProofChain computes a cryptographic SHA-256 hash client-side inside your browser. Only the 64-character hash string and IPFS CID are stored on-chain. Your private document content never leaves local memory.'
   },
   {
-    title: 'Instant Verification',
-    desc: 'Anyone can verify authenticity by uploading the same document. Its hash is compared against the on-chain record.'
+    q: 'How does the Zero Trust Dual-Authentication (ZTNA) work?',
+    a: 'ProofChain requires two matching credentials to unlock institutional features: first, valid Web2 email/password authentication, followed by a connected Solana Phantom wallet whose Ed25519 address matches the bound user record in the database.'
+  },
+  {
+    q: 'Can issued credentials be revoked if a degree or license is canceled?',
+    a: 'Yes. Issuers can perform a sub-second IPFS Metadata Soft-Lock to freeze public verification immediately, or sign an Anchor transaction on Solana to permanently record revocation status on-chain.'
   }
 ];
 
 const styles = {
   modalOverlay: {
     position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    top: 0, left: 0, right: 0, bottom: 0,
     background: 'rgba(3, 3, 6, 0.75)',
     backdropFilter: 'blur(20px) saturate(1.8)',
     WebkitBackdropFilter: 'blur(20px) saturate(1.8)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 9999,
-    padding: '1rem',
+    display: 'flex', justifyContent: 'center', alignItems: 'center',
+    zIndex: 9999, padding: '1rem',
   },
   modalContent: {
     background: 'rgba(12, 12, 18, 0.92)',
     border: '1px solid rgba(255, 255, 255, 0.12)',
-    borderRadius: '24px',
-    padding: '2.5rem',
-    width: '90%',
-    maxWidth: '480px',
-    position: 'relative',
+    borderRadius: '24px', padding: '2.5rem',
+    width: '90%', maxWidth: '480px', position: 'relative',
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 240, 255, 0.15)',
-    display: 'flex',
-    flexDirection: 'column',
+    display: 'flex', flexDirection: 'column',
   },
   logoIcon: {
-    width: '72px',
-    height: '72px',
-    margin: '0 auto',
-    borderRadius: '16px',
+    width: '72px', height: '72px', margin: '0 auto', borderRadius: '16px',
     background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(139, 92, 246, 0.15))',
-    border: '1px solid rgba(0, 240, 255, 0.3)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0 0 30px rgba(0, 240, 255, 0.25)',
+    border: '1px solid rgba(0, 240, 255, 0.3)', display: 'flex',
+    alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 30px rgba(0, 240, 255, 0.25)',
     padding: '8px'
   },
   closeBtn: {
-    position: 'absolute',
-    top: '1.25rem',
-    right: '1.25rem',
-    background: 'rgba(255, 255, 255, 0.05)',
-    color: 'var(--text-muted)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '50%',
-    width: '32px',
-    height: '32px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease'
+    position: 'absolute', top: '1.25rem', right: '1.25rem',
+    background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-muted)',
+    border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '50%',
+    width: '32px', height: '32px', display: 'flex',
+    alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s ease'
   },
-  stepContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    width: '100%',
-  },
+  stepContainer: { display: 'flex', flexDirection: 'column', width: '100%' },
   authStep: {
-    background: 'rgba(255, 255, 255, 0.03)',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
-    borderRadius: '16px',
-    padding: '1.5rem',
-    transition: 'all 0.3s ease',
-    width: '100%'
+    background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)',
+    borderRadius: '16px', padding: '1.5rem', transition: 'all 0.3s ease', width: '100%'
   },
-  stepHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1rem',
-    marginBottom: '1.5rem'
-  },
+  stepHeader: { display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' },
   authStepNumber: {
-    width: '28px',
-    height: '28px',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#000',
-    fontWeight: 'bold',
-    fontSize: '0.9rem',
-    flexShrink: 0
+    width: '28px', height: '28px', borderRadius: '50%', display: 'flex',
+    alignItems: 'center', justifyContent: 'center', color: '#000',
+    fontWeight: 'bold', fontSize: '0.9rem', flexShrink: 0
   },
   modalInput: {
-    width: '100%',
-    padding: '14px 18px',
-    marginBottom: '1rem',
-    background: 'rgba(255, 255, 255, 0.05)',
-    border: '1px solid rgba(255, 255, 255, 0.12)',
-    borderRadius: '12px',
-    color: '#F0F0F5',
-    fontSize: '0.95rem',
-    fontFamily: 'Outfit, sans-serif',
-    outline: 'none',
-    boxSizing: 'border-box'
+    width: '100%', padding: '14px 18px', marginBottom: '1rem',
+    background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.12)',
+    borderRadius: '12px', color: '#F0F0F5', fontSize: '0.95rem',
+    fontFamily: 'Outfit, sans-serif', outline: 'none', boxSizing: 'border-box'
   },
-  
+
   hero: {
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    padding: '2rem',
-    overflow: 'hidden'
+    minHeight: '90vh', display: 'flex', flexDirection: 'column',
+    alignItems: 'center', justifyContent: 'center', position: 'relative',
+    padding: '4rem 2rem 2rem', zIndex: 1
   },
-  gridBg: {
-    position: 'absolute',
-    inset: 0,
-    backgroundImage: `
-      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)
-    `,
-    backgroundSize: '60px 60px',
-    maskImage: 'radial-gradient(ellipse 70% 50% at 50% 50%, black 40%, transparent 100%)',
-    WebkitMaskImage: 'radial-gradient(ellipse 70% 50% at 50% 50%, black 40%, transparent 100%)'
-  },
-  orb: {
-    position: 'absolute',
-    borderRadius: '50%',
-    filter: 'blur(80px)',
-    pointerEvents: 'none'
-  },
-  orb1: {
-    width: '500px',
-    height: '500px',
-    background: 'rgba(0, 240, 255, 0.08)',
-    top: '10%',
-    left: '-10%',
-    animation: 'float 8s ease-in-out infinite'
-  },
-  orb2: {
-    width: '400px',
-    height: '400px',
-    background: 'rgba(139, 92, 246, 0.08)',
-    top: '30%',
-    right: '-5%',
-    animation: 'float 10s ease-in-out infinite reverse'
-  },
-  orb3: {
-    width: '300px',
-    height: '300px',
-    background: 'rgba(236, 72, 153, 0.06)',
-    bottom: '10%',
-    left: '30%',
-    animation: 'float 12s ease-in-out infinite'
-  },
-  heroContent: {
-    textAlign: 'center',
-    maxWidth: '800px',
-    position: 'relative',
-    zIndex: 2
-  },
+  heroContent: { textAlign: 'center', maxWidth: '850px' },
   heroBadge: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '6px 16px',
-    borderRadius: '9999px',
-    background: 'rgba(0, 240, 255, 0.06)',
-    border: '1px solid rgba(0, 240, 255, 0.15)',
-    fontSize: '0.8rem',
-    color: 'var(--neon-cyan)',
-    marginBottom: '2rem',
-    fontWeight: 500,
-    letterSpacing: '0.02em'
+    display: 'inline-flex', alignItems: 'center', gap: '8px',
+    padding: '8px 20px', borderRadius: '9999px',
+    background: 'rgba(0, 240, 255, 0.06)', border: '1px solid rgba(0, 240, 255, 0.2)',
+    fontSize: '0.85rem', color: 'var(--neon-cyan)', marginBottom: '2rem',
+    fontWeight: 500, letterSpacing: '0.02em'
   },
   pulseDot: {
-    width: '6px',
-    height: '6px',
-    borderRadius: '50%',
-    background: 'var(--neon-green)',
-    boxShadow: '0 0 8px var(--neon-green)',
-    animation: 'pulse 2s ease-in-out infinite'
+    width: '8px', height: '8px', borderRadius: '50%',
+    background: 'var(--neon-green)', boxShadow: '0 0 10px var(--neon-green)'
   },
   heroTitle: {
-    fontSize: 'clamp(2.5rem, 6vw, 4.5rem)',
-    fontFamily: 'var(--font-display)',
-    fontWeight: 900,
-    letterSpacing: '-0.04em',
-    lineHeight: 1.05,
-    marginBottom: '1.5rem',
-    color: 'var(--text-primary)'
+    fontSize: 'clamp(2.5rem, 5.5vw, 4.5rem)', fontFamily: 'Outfit, sans-serif',
+    fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: '1.5rem'
   },
   heroSubtitle: {
-    fontSize: 'clamp(1rem, 2vw, 1.2rem)',
-    color: 'var(--text-secondary)',
-    maxWidth: '600px',
-    margin: '0 auto 2.5rem',
-    lineHeight: 1.7
+    fontSize: 'clamp(1rem, 1.8vw, 1.25rem)', color: 'var(--text-secondary)',
+    maxWidth: '700px', margin: '0 auto 2.5rem', lineHeight: 1.7
   },
-  heroCtas: {
-    display: 'flex',
-    gap: '1rem',
-    justifyContent: 'center',
-    flexWrap: 'wrap'
-  },
+  heroCtas: { display: 'flex', gap: '1.25rem', justifyContent: 'center', flexWrap: 'wrap' },
   ctaBtn: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '14px 28px',
-    fontSize: '1rem',
-    fontWeight: 600,
-    textDecoration: 'none'
+    display: 'inline-flex', alignItems: 'center', gap: '10px',
+    borderRadius: '12px', fontWeight: 600, textDecoration: 'none'
   },
-  scrollIndicator: {
-    position: 'absolute',
-    bottom: '2rem',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    color: 'var(--text-muted)',
-    opacity: 0.5
-  },
-  
-  statsSection: {
-    padding: '4rem 2rem',
-    borderTop: '1px solid var(--border-subtle)',
-    borderBottom: '1px solid var(--border-subtle)',
-    background: 'rgba(0, 0, 0, 0.3)'
-  },
-  statsGrid: {
-    maxWidth: '900px',
-    margin: '0 auto',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: '3rem',
-    flexWrap: 'wrap'
-  },
-  statItem: {
-    textAlign: 'center'
-  },
-  statNumber: {
-    display: 'block',
-    fontFamily: 'var(--font-display)',
-    fontSize: 'clamp(2rem, 4vw, 3rem)',
-    fontWeight: 800,
-    lineHeight: 1,
-    marginBottom: '0.5rem'
-  },
-  statLabel: {
-    fontSize: '0.8rem',
-    color: 'var(--text-muted)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.1em',
-    fontWeight: 500
-  },
-  statDivider: {
-    width: '1px',
-    height: '60px',
-    background: 'var(--border-default)'
-  },
-  
-  featuresSection: {
-    padding: '6rem 2rem',
-    maxWidth: '1200px',
-    margin: '0 auto'
-  },
-  featuresGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-    gap: '1.5rem'
-  },
-  featureCard: {
-    padding: '2rem',
-    cursor: 'default'
-  },
+
+  statsSection: { padding: '2rem 2rem 5rem', maxWidth: '1000px', margin: '0 auto', position: 'relative', zIndex: 2 },
+  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' },
+  statCard: { padding: '2.5rem 1.5rem', borderRadius: '24px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' },
+  statNumber: { fontSize: '3rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', color: 'var(--text-primary)', marginBottom: '0.5rem', background: 'linear-gradient(135deg, var(--neon-cyan), var(--neon-violet))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
+  statLabel: { fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 500 },
+
+  featuresSection: { padding: '5rem 2rem', maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 2 },
+  featuresGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' },
+  featureCard: { padding: '2rem', borderRadius: '20px' },
   featureIcon: {
-    width: '48px',
-    height: '48px',
-    borderRadius: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: '1.25rem'
+    width: '52px', height: '52px', borderRadius: '14px',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem'
   },
-  featureTitle: {
-    fontSize: '1.1rem',
-    fontWeight: 600,
-    marginBottom: '0.75rem',
-    color: 'var(--text-primary)'
-  },
-  featureDesc: {
-    fontSize: '0.9rem',
-    color: 'var(--text-secondary)',
-    lineHeight: 1.7
-  },
-  
-  howSection: {
-    padding: '6rem 2rem',
-    maxWidth: '900px',
-    margin: '0 auto'
-  },
-  stepsGrid: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2.5rem'
-  },
-  stepItem: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    textAlign: 'center',
-    position: 'relative'
-  },
-  stepNumber: {
-    width: '56px',
-    height: '56px',
-    borderRadius: '50%',
-    border: '1px solid var(--border-glow)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: '1rem',
-    background: 'var(--bg-glass)',
-    backdropFilter: 'blur(10px)',
-    boxShadow: '0 0 20px rgba(0, 240, 255, 0.05)'
-  },
-  stepConnector: {
-    position: 'absolute',
-    bottom: '-1.5rem',
-    width: '1px',
-    height: '1.5rem',
-    background: 'linear-gradient(to bottom, var(--border-glow), transparent)'
-  },
-  
-  ctaSection: {
-    padding: '4rem 2rem 6rem',
-    maxWidth: '800px',
-    margin: '0 auto'
-  },
-  ctaBanner: {
-    padding: '4rem',
-    textAlign: 'center',
-    position: 'relative',
-    overflow: 'hidden'
-  },
-  
-  footer: {
-    borderTop: '1px solid var(--border-subtle)',
-    padding: '2rem',
-    background: 'rgba(0, 0, 0, 0.3)'
-  },
-  footerContent: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: '1rem'
-  }
+  featureTitle: { fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-primary)' },
+  featureDesc: { fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.7 },
+
+  archSection: { padding: '5rem 2rem', background: 'rgba(0, 0, 0, 0.4)', position: 'relative', zIndex: 2 },
+  archContainer: { maxWidth: '1100px', margin: '0 auto' },
+  pillarsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' },
+  pillarCard: { padding: '2rem', borderRadius: '20px', display: 'flex', flexDirection: 'column', gap: '1rem' },
+
+  useCasesSection: { padding: '5rem 2rem', maxWidth: '1100px', margin: '0 auto', position: 'relative', zIndex: 2 },
+  useCaseGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' },
+  useCaseCard: { padding: '2rem', borderRadius: '20px', display: 'flex', flexDirection: 'column', gap: '1rem' },
+
+  faqSection: { padding: '5rem 2rem', maxWidth: '850px', margin: '0 auto', position: 'relative', zIndex: 2 },
+  faqList: { display: 'flex', flexDirection: 'column', gap: '1rem' },
+  faqItem: { padding: '1.5rem 2rem', borderRadius: '16px', cursor: 'pointer' },
+  faqQuestion: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600, fontSize: '1.05rem' },
+  faqAnswer: { marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.7, borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '1rem' },
+
+  ctaSection: { padding: '4rem 2rem 6rem', maxWidth: '900px', margin: '0 auto', position: 'relative', zIndex: 2 },
+  ctaBanner: { padding: '4rem 2rem', textAlign: 'center', borderRadius: '28px' },
+
+  footer: { padding: '3rem 2rem', borderTop: '1px solid var(--border-subtle)', background: 'rgba(0,0,0,0.6)', position: 'relative', zIndex: 2 },
+  footerContent: { maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }
 };
 
 export default Home;

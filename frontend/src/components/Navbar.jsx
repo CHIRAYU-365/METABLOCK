@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Menu, X, LayoutDashboard, LogOut } from 'lucide-react';
+import ThemeToggle from './ThemeToggle';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -105,6 +106,7 @@ const Navbar = () => {
 
           {}
           <div style={styles.rightGroup}>
+            <ThemeToggle />
             <div style={styles.walletWrapper}>
               <WalletMultiButton />
             </div>
@@ -173,16 +175,16 @@ const styles = {
     left: 0,
     right: 0,
     zIndex: 1000,
-    background: 'rgba(3, 3, 4, 0.6)',
+    background: 'var(--bg-glass)',
     backdropFilter: 'blur(20px) saturate(1.5)',
     WebkitBackdropFilter: 'blur(20px) saturate(1.5)',
     borderBottom: '1px solid transparent',
     transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
   },
   navScrolled: {
-    background: 'rgba(6, 6, 8, 0.85)',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
-    boxShadow: '0 4px 30px rgba(0, 0, 0, 0.3)'
+    background: 'var(--bg-glass-active)',
+    borderBottom: '1px solid var(--border-subtle)',
+    boxShadow: 'var(--shadow-md)'
   },
   inner: {
     maxWidth: '1280px',
@@ -307,7 +309,7 @@ const styles = {
     right: 0,
     bottom: 0,
     zIndex: 999,
-    background: 'rgba(3, 3, 4, 0.95)',
+    background: 'var(--bg-glass)',
     backdropFilter: 'blur(20px)',
     WebkitBackdropFilter: 'blur(20px)',
     animation: 'fadeIn 0.2s ease'

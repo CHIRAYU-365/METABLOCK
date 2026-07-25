@@ -454,37 +454,37 @@ const styles = {
   modalOverlay: {
     position: 'fixed',
     top: 0, left: 0, right: 0, bottom: 0,
-    background: 'rgba(3, 3, 6, 0.75)',
+    background: 'var(--bg-glass)',
     backdropFilter: 'blur(20px) saturate(1.8)',
     WebkitBackdropFilter: 'blur(20px) saturate(1.8)',
     display: 'flex', justifyContent: 'center', alignItems: 'center',
     zIndex: 9999, padding: '1rem',
   },
   modalContent: {
-    background: 'rgba(12, 12, 18, 0.92)',
-    border: '1px solid rgba(255, 255, 255, 0.12)',
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--border-subtle)',
     borderRadius: '24px', padding: '2.5rem',
     width: '90%', maxWidth: '480px', position: 'relative',
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 240, 255, 0.15)',
+    boxShadow: 'var(--shadow-lg), var(--shadow-glow-cyan)',
     display: 'flex', flexDirection: 'column',
   },
   logoIcon: {
     width: '72px', height: '72px', margin: '0 auto', borderRadius: '16px',
-    background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(139, 92, 246, 0.15))',
-    border: '1px solid rgba(0, 240, 255, 0.3)', display: 'flex',
-    alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 30px rgba(0, 240, 255, 0.25)',
+    background: 'linear-gradient(135deg, var(--glow-cyan-soft), var(--glow-violet-soft))',
+    border: '1px solid var(--border-subtle)', display: 'flex',
+    alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 30px var(--glow-cyan)',
     padding: '8px'
   },
   closeBtn: {
     position: 'absolute', top: '1.25rem', right: '1.25rem',
-    background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-muted)',
-    border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '50%',
+    background: 'var(--bg-secondary)', color: 'var(--text-muted)',
+    border: '1px solid var(--border-subtle)', borderRadius: '50%',
     width: '32px', height: '32px', display: 'flex',
     alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s ease'
   },
   stepContainer: { display: 'flex', flexDirection: 'column', width: '100%' },
   authStep: {
-    background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)',
+    background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)',
     borderRadius: '16px', padding: '1.5rem', transition: 'all 0.3s ease', width: '100%'
   },
   stepHeader: { display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' },
@@ -495,8 +495,8 @@ const styles = {
   },
   modalInput: {
     width: '100%', padding: '14px 18px', marginBottom: '1rem',
-    background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.12)',
-    borderRadius: '12px', color: '#F0F0F5', fontSize: '0.95rem',
+    background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)',
+    borderRadius: '12px', color: 'var(--text-primary)', fontSize: '0.95rem',
     fontFamily: 'Outfit, sans-serif', outline: 'none', boxSizing: 'border-box'
   },
 
@@ -547,7 +547,7 @@ const styles = {
   featureTitle: { fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-primary)' },
   featureDesc: { fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.7 },
 
-  archSection: { padding: '5rem 2rem', background: 'rgba(0, 0, 0, 0.4)', position: 'relative', zIndex: 2 },
+  archSection: { padding: '5rem 2rem', background: 'var(--bg-primary)', position: 'relative', zIndex: 2 },
   archContainer: { maxWidth: '1100px', margin: '0 auto' },
   pillarsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' },
   pillarCard: { padding: '2rem', borderRadius: '20px', display: 'flex', flexDirection: 'column', gap: '1rem' },
@@ -565,7 +565,7 @@ const styles = {
   ctaSection: { padding: '4rem 2rem 6rem', maxWidth: '900px', margin: '0 auto', position: 'relative', zIndex: 2 },
   ctaBanner: { padding: '4rem 2rem', textAlign: 'center', borderRadius: '28px' },
 
-  footer: { padding: '3rem 2rem', borderTop: '1px solid var(--border-subtle)', background: 'rgba(0,0,0,0.6)', position: 'relative', zIndex: 2 },
+  footer: { padding: '3rem 2rem', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-primary)', position: 'relative', zIndex: 2 },
   footerContent: { maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }
 };
 

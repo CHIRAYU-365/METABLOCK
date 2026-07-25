@@ -49,7 +49,7 @@ const app = express();
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim().replace(/^["']|["']$/g, '')) 
-  : ['http:
+  : ['http://localhost:5173'];
 
 app.use(cors({
   origin: function (origin, callback) {

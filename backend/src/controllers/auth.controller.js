@@ -45,7 +45,7 @@ const login = async (req, res) => {
   }
   
   const token = jwt.sign(
-    { id: user.id, username: user.username, email: user.email, role: user.role, status: user.status, designation: user.designation },
+    { id: user.id, username: user.username, email: user.email, role: user.role, status: user.status, designation: user.designation, walletAddress: user.walletAddress },
     process.env.JWT_SECRET,
     { expiresIn: '24h' }
   );
@@ -54,14 +54,14 @@ const login = async (req, res) => {
 
   res.json({ 
     token, 
-    user: { id: user.id, username: user.username, email: user.email, role: user.role, status: user.status, designation: user.designation } 
+    user: { id: user.id, username: user.username, email: user.email, role: user.role, status: user.status, designation: user.designation, walletAddress: user.walletAddress } 
   });
 };
 
 const getMe = async (req, res) => {
   const user = await prisma.user.findUnique({ 
     where: { id: req.user.id }, 
-    select: { id: true, username: true, email: true, role: true, status: true, designation: true } 
+    select: { id: true, username: true, email: true, role: true, status: true, designation: true, walletAddress: true } 
   });
   res.json({ user });
 };
@@ -76,7 +76,7 @@ const qrAttendance = async (req, res) => {
   });
   if (!user) return res.status(404).json({ error: "Invalid QR: User not found." });
 
-  // Get the last check-in/out log to determine state
+  
   const lastLog = await prisma.auditLog.findFirst({
     where: {
       userId: user.id,
@@ -105,9 +105,42 @@ const qrAttendance = async (req, res) => {
   res.json({ message, action, user: user.username });
 };
 
+const linkWallet = async (req, res) => {
+  const { walletAddress } = req.body;
+  if (!walletAddress) return res.status(400).json({ error: "Missing wallet address" });
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    if (user.walletAddress && user.walletAddress !== walletAddress) {
+      return res.status(403).json({ error: "Wallet mismatch. Please connect your registered wallet." });
+    }
+
+    if (!user.walletAddress) {
+      const existingWalletUser = await prisma.user.findUnique({ where: { walletAddress } });
+      if (existingWalletUser) {
+        return res.status(400).json({ error: "This wallet is already linked to another account." });
+      }
+
+      await prisma.user.update({
+        where: { id: req.user.id },
+        data: { walletAddress }
+      });
+      await auditService.logAction(user.id, 'WALLET_LINKED', `Linked wallet ${walletAddress}`, req.ip);
+    }
+
+    res.json({ message: "Wallet verified successfully", walletAddress });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to verify wallet" });
+  }
+};
+
 module.exports = {
   register,
   login,
   getMe,
-  qrAttendance
+  qrAttendance,
+  linkWallet
 };

@@ -23,7 +23,32 @@ const listDocumentsByKeyValue = async (key, value) => {
   return files;
 };
 
+const listAllDocuments = async () => {
+  const files = await pinata.listFiles();
+  return files;
+};
+
+const updateDocumentMetadata = async (ipfsCid, keyValues) => {
+  const axios = require('axios');
+  const response = await axios.put(
+    'https://api.pinata.cloud/pinata/hashMetadata',
+    {
+      ipfsPinHash: ipfsCid,
+      keyvalues: keyValues
+    },
+    {
+      headers: {
+        'Authorization': `Bearer ${process.env.PINATA_JWT}`,
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+  return response.data;
+};
+
 module.exports = {
   uploadDocument,
-  listDocumentsByKeyValue
+  listDocumentsByKeyValue,
+  listAllDocuments,
+  updateDocumentMetadata
 };

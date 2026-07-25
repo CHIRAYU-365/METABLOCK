@@ -6,7 +6,7 @@ const morgan = require('morgan');
 const hpp = require('hpp');
 const rateLimit = require('express-rate-limit');
 
-// Custom lightweight XSS sanitizer compatible with Express 5's read-only query object
+
 const sanitizeHtml = (str) => {
   if (typeof str !== 'string') return str;
   return str
@@ -49,7 +49,7 @@ const app = express();
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim().replace(/^["']|["']$/g, '')) 
-  : ['http://localhost:5173', 'http://localhost:3000'];
+  : ['http:
 
 app.use(cors({
   origin: function (origin, callback) {

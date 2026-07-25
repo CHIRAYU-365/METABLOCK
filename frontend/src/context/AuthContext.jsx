@@ -19,7 +19,8 @@ export const AuthProvider = ({ children }) => {
             email: decoded.email,
             role: decoded.role,
             status: decoded.status,
-            designation: decoded.designation
+            designation: decoded.designation,
+            walletAddress: decoded.walletAddress
           });
         }
       } catch (err) {
@@ -39,13 +40,21 @@ export const AuthProvider = ({ children }) => {
   const register = async (username, email, password, role = 'USER') => {
     await axios.post(`${API_URL}/api/auth/register`, { username, email, password, role });
   };
+  const linkWallet = async (walletAddress) => {
+    if (!token) return;
+    const res = await axios.post(`${API_URL}/api/auth/link-wallet`, { walletAddress }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    
+    setUser(prev => ({ ...prev, walletAddress: res.data.walletAddress }));
+  };
   const logout = () => {
     setToken(null);
     setUser(null);
     sessionStorage.removeItem('token');
   };
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout, loading, linkWallet }}>
       {children}
     </AuthContext.Provider>
   );

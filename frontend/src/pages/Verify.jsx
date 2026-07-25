@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import axios from 'axios';
 import { Connection } from '@solana/web3.js';
 import { calculateSHA256 } from '../utils/hash';
 import { abstractHash } from '../utils/mask';
@@ -78,14 +79,27 @@ const Verify = () => {
       if (isRevoked) {
         setResult({ status: 'REVOKED', message: 'This credential was revoked by the issuer on-chain.', hash: rootHash });
       } else {
-        setResult({
-          status: 'AUTHENTIC',
-          isZk: true,
-          disclosedFields,
-          hiddenFieldHashes,
-          message: 'ZK Cryptographic Proof and Solana ledger record are both fully authentic!',
-          hash: rootHash
-        });
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+        let isLocked = false;
+        try {
+          const res = await axios.get(`${API_URL}/api/documents/public/${rootHash}/status`);
+          isLocked = res.data.isLocked;
+        } catch (e) {
+          console.error("Failed to fetch lock status from IPFS backend");
+        }
+
+        if (isLocked) {
+          setResult({ status: 'FAKE', message: 'This credential is Temporarily Locked by the issuer.', hash: rootHash });
+        } else {
+          setResult({
+            status: 'AUTHENTIC',
+            isZk: true,
+            disclosedFields,
+            hiddenFieldHashes,
+            message: 'ZK Cryptographic Proof and Solana ledger record are both fully authentic!',
+            hash: rootHash
+          });
+        }
       }
     } catch (err) {
       console.error(err);
@@ -111,7 +125,20 @@ const Verify = () => {
       if (isRevoked) {
         setResult({ status: 'REVOKED', message: 'Document was revoked by the issuer.', hash: docHashHex });
       } else {
-        setResult({ status: 'AUTHENTIC', message: 'Cryptographic proof verified on Solana.', hash: docHashHex });
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+        let isLocked = false;
+        try {
+          const res = await axios.get(`${API_URL}/api/documents/public/${docHashHex}/status`);
+          isLocked = res.data.isLocked;
+        } catch (e) {
+          console.error("Failed to fetch lock status from IPFS backend");
+        }
+
+        if (isLocked) {
+          setResult({ status: 'FAKE', message: 'This credential is Temporarily Locked by the issuer.', hash: docHashHex });
+        } else {
+          setResult({ status: 'AUTHENTIC', message: 'Cryptographic proof verified on Solana.', hash: docHashHex });
+        }
       }
     } catch (err) {
       console.error(err);
@@ -146,7 +173,20 @@ const Verify = () => {
         if (isRevoked) {
           setResult({ status: 'REVOKED', message: 'Document was revoked by the issuer.', hash: docHash });
         } else {
-          setResult({ status: 'AUTHENTIC', message: 'Cryptographic proof verified on Solana.', hash: docHash });
+          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+          let isLocked = false;
+          try {
+            const res = await axios.get(`${API_URL}/api/documents/public/${docHash}/status`);
+            isLocked = res.data.isLocked;
+          } catch (e) {
+            console.error("Failed to fetch lock status");
+          }
+          
+          if (isLocked) {
+            setResult({ status: 'FAKE', message: 'This credential is Temporarily Locked by the issuer.', hash: docHash });
+          } else {
+            setResult({ status: 'AUTHENTIC', message: 'Cryptographic proof verified on Solana.', hash: docHash });
+          }
         }
       }
     } catch (err) {
@@ -214,7 +254,7 @@ const Verify = () => {
   return (
     <div style={styles.page}>
       <div style={styles.container} className="animate-fade-in">
-        {/* Header */}
+        {}
         <div style={styles.header}>
           <div style={styles.iconCircle}>
             <FileSearch size={28} color="var(--neon-cyan)" />
@@ -228,7 +268,7 @@ const Verify = () => {
           </p>
         </div>
 
-        {/* Upload Card */}
+        {}
         <div className="card-glow" style={styles.card}>
           <form onSubmit={handleVerify}>
             <div 
@@ -296,7 +336,7 @@ const Verify = () => {
             </button>
           </form>
 
-          {/* Result */}
+          {}
           {result && (() => {
             const cfg = getStatusConfig(result.status);
             return (
@@ -314,7 +354,7 @@ const Verify = () => {
                 </div>
                 <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>{result.message}</p>
                 
-                {/* ZK Disclosed Claims */}
+                {}
                 {result.isZk && (
                   <div style={styles.zkBox}>
                     <h4 style={{ marginBottom: '0.75rem', color: 'var(--text-primary)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -345,7 +385,7 @@ const Verify = () => {
                   </div>
                 )}
 
-                {/* Hash */}
+                {}
                 {result.hash && (
                   <div style={styles.hashRow}>
                     <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', opacity: 0.7 }}>

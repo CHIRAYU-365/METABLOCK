@@ -19,18 +19,27 @@ const Home = () => {
   const [username, setUsername] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   
-  const { login, register, user } = useAuth();
+  const { login, register, user, linkWallet } = useAuth();
   const wallet = useWallet();
   const navigate = useNavigate();
 
   // Watch for both conditions to be met
   useEffect(() => {
     if (user && wallet.connected && showAuthModal) {
-      toast.success("Zero-Trust Verification Complete");
-      setShowAuthModal(false);
-      navigate('/dashboard');
+      const verifyWallet = async () => {
+        try {
+          await linkWallet(wallet.publicKey.toString());
+          toast.success("Zero-Trust Verification Complete");
+          setShowAuthModal(false);
+          navigate('/dashboard');
+        } catch (err) {
+          toast.error(err.response?.data?.error || "Failed to verify wallet");
+          wallet.disconnect(); 
+        }
+      };
+      verifyWallet();
     }
-  }, [user, wallet.connected, showAuthModal, navigate]);
+  }, [user, wallet.connected, showAuthModal, navigate, wallet.publicKey]);
 
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
@@ -48,7 +57,7 @@ const Home = () => {
     }
   };
 
-  // Intersection observer for scroll animations
+  
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -68,7 +77,7 @@ const Home = () => {
 
   return (
     <div style={{ overflow: 'hidden', height: showAuthModal ? '100vh' : 'auto' }}>
-      {/* ════════ AUTH MODAL (ZTNA) ════════ */}
+      {}
       {showAuthModal && (
         <div style={styles.modalOverlay}>
           <div className="card-glow animate-scale-in" style={styles.modalContent}>
@@ -81,8 +90,7 @@ const Home = () => {
             
             <div style={styles.stepContainer}>
               {!user ? (
-                /* STEP 1: WEB2 IDENTITY */
-                <div style={{ ...styles.authStep, opacity: 1 }} className="animate-fade-in">
+                                <div style={{ ...styles.authStep, opacity: 1 }} className="animate-fade-in">
                   <div style={styles.stepHeader}>
                     <div style={{ ...styles.authStepNumber, background: 'var(--neon-cyan)' }}>1</div>
                     <h4 style={{ margin: 0, fontSize: '1rem' }}>Identity Verification (Web2)</h4>
@@ -126,8 +134,7 @@ const Home = () => {
                   </form>
                 </div>
               ) : (
-                /* STEP 2: WEB3 WALLET */
-                <div style={{ ...styles.authStep, opacity: 1 }} className="animate-fade-in">
+                                <div style={{ ...styles.authStep, opacity: 1 }} className="animate-fade-in">
                   <div style={styles.stepHeader}>
                     <div style={{ ...styles.authStepNumber, background: wallet.connected ? 'var(--neon-green)' : 'var(--neon-violet)' }}>2</div>
                     <h4 style={{ margin: 0, fontSize: '1rem' }}>Cryptographic Verification (Web3)</h4>
@@ -155,12 +162,12 @@ const Home = () => {
       )}
 
       <div style={{ filter: showAuthModal ? 'blur(10px) brightness(0.4)' : 'none', transition: 'all 0.3s ease' }}>
-      {/* ════════ HERO SECTION ════════ */}
+      {}
       <section ref={heroRef} style={styles.hero}>
-        {/* Grid background */}
+        {}
         <div style={styles.gridBg} />
         
-        {/* Floating orbs */}
+        {}
         <div style={{ ...styles.orb, ...styles.orb1 }} />
         <div style={{ ...styles.orb, ...styles.orb2 }} />
         <div style={{ ...styles.orb, ...styles.orb3 }} />
@@ -190,14 +197,14 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Scroll indicator */}
+        {}
         <div style={styles.scrollIndicator} className="animate-fade-in-delay-3">
           <ChevronDown size={20} style={{ animation: 'float 2s ease-in-out infinite' }} />
         </div>
       </section>
 
 
-      {/* ════════ FEATURES ════════ */}
+      {}
       <section ref={featuresRef} style={styles.featuresSection}>
         <div className="reveal-section" style={{ textAlign: 'center', marginBottom: '4rem' }}>
           <h2 style={{ marginBottom: '1rem' }}>
@@ -226,7 +233,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ════════ HOW IT WORKS ════════ */}
+      {}
       <section style={styles.howSection}>
         <div className="reveal-section" style={{ textAlign: 'center', marginBottom: '4rem' }}>
           <h2 style={{ marginBottom: '1rem' }}>
@@ -254,7 +261,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ════════ CTA BANNER ════════ */}
+      {}
       <section style={styles.ctaSection}>
         <div className="card-glow reveal-section" style={styles.ctaBanner}>
           <h2 style={{ marginBottom: '1rem' }}>
@@ -272,7 +279,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ════════ FOOTER ════════ */}
+      {}
       <footer style={styles.footer}>
         <div style={styles.footerContent}>
           <div>
@@ -347,7 +354,7 @@ const steps = [
 ];
 
 const styles = {
-  // Modal Styles
+  
   modalOverlay: {
     position: 'fixed',
     top: 0,
@@ -426,7 +433,7 @@ const styles = {
     fontFamily: 'Space Grotesk, sans-serif',
     outline: 'none',
   },
-  // Hero
+  
   hero: {
     minHeight: '100vh',
     display: 'flex',
@@ -545,7 +552,7 @@ const styles = {
     color: 'var(--text-muted)',
     opacity: 0.5
   },
-  // Stats
+  
   statsSection: {
     padding: '4rem 2rem',
     borderTop: '1px solid var(--border-subtle)',
@@ -584,7 +591,7 @@ const styles = {
     height: '60px',
     background: 'var(--border-default)'
   },
-  // Features
+  
   featuresSection: {
     padding: '6rem 2rem',
     maxWidth: '1200px',
@@ -619,7 +626,7 @@ const styles = {
     color: 'var(--text-secondary)',
     lineHeight: 1.7
   },
-  // How it works
+  
   howSection: {
     padding: '6rem 2rem',
     maxWidth: '900px',
@@ -657,7 +664,7 @@ const styles = {
     height: '1.5rem',
     background: 'linear-gradient(to bottom, var(--border-glow), transparent)'
   },
-  // CTA
+  
   ctaSection: {
     padding: '4rem 2rem 6rem',
     maxWidth: '800px',
@@ -669,7 +676,7 @@ const styles = {
     position: 'relative',
     overflow: 'hidden'
   },
-  // Footer
+  
   footer: {
     borderTop: '1px solid var(--border-subtle)',
     padding: '2rem',

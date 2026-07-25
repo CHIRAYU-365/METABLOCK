@@ -1,19 +1,32 @@
+# Backend .gitignore for ProofChain
+
 # Dependencies
 node_modules/
 
-# Environment configurations
+# Environment Configurations & Secrets
 .env
 .env.*
+!.env.example
+*.key
+*.pem
 
-# Logs
+# Application Logs
 *.log
 logs/
 
-# Prisma local database files (but commit migrations)
+# Prisma & Local Databases
 *.db
 *.db-journal
+*.sqlite
+*.sqlite3
 
-# IDEs and Editors
+# Seeding & Local Scripts
+seed_superadmin.js
+
+# Local Test Ledger
+test-ledger/
+
+# IDEs & Editors
 .idea/
 .vscode/
 *.swp
@@ -22,6 +35,4 @@ logs/
 # OS Files
 .DS_Store
 Thumbs.db
-
-# Solana test ledger if generated in backend
-test-ledger/
+Desktop.ini

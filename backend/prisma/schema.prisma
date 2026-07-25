@@ -26,6 +26,7 @@ model User {
   username     String   @unique
   email        String   @unique
   passwordHash String
+  walletAddress String? @unique
   role         Role     @default(USER)
   status       Status   @default(ACTIVE)
   designation  String?

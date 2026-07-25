@@ -1,141 +1,167 @@
-# METABLOCK & PROOFCHAIN: SECURITY SPECIFICATIONS AND THREAT DEFENSE MANUAL
+# 🔒 ProofChain Security & Cryptography Specification
 
-This document details the security posture, threat modeling, and defensive controls implemented across the **METABLOCK** workspace (focusing on the **ProofChain** subsystem). It describes how the project mitigates common Web2 vulnerabilities, Web3 blockchain attack vectors, and specialized malware or user-centric exploits.
+> **Zero Trust Network Access • Cryptographic Attestation • Immutable Revocation**
 
----
-
-## 🛡️ Executive Summary of Security Controls
-
-ProofChain integrates defense-in-depth across three layers:
-1. **The Client (Vite React PWA):** Local cryptographic operations ensure raw document content never leaves the user's browser.
-2. **The API Gateway (Node.js Express 5 + Prisma Postgres):** Sanitization, rate-limiting, secure headers, and strict authentication middleware protect the cache layer.
-3. **The Ledger (Solana Devnet):** Rust-based Anchor programs enforce cryptographic constraints, preventing identity spoofing and collision attacks.
+This document details the security architecture, threat model, cryptographic invariants, and operational security guidelines governing the ProofChain platform.
 
 ---
 
-## 🔍 Attack Vectors & Defensive Implementations
+## 📑 Table of Contents
 
-### 1. On-Chain Re-Registration & Double Claiming (Collision Attacks)
-* **The Threat:** An attacker attempts to register an existing document under their own name/key or replace an active document's metadata to claim false ownership.
-* **The Defense:** 
-  * Document registry addresses are derived as **Program Derived Addresses (PDAs)** using Solana's deterministic seed generation.
-  * Seeds used: `[b"document", SHA-256_hash_of_document]`.
-  * In the Rust program ([register_document.rs](file:///c:/Users/chira/OneDrive/ドキュメント/METABLOCK/METABLOCK/PROOFCHAIN/blockchain/programs/blockchain/src/instructions/register_document.rs)), the `init` constraint is applied:
-    ```rust
-    #[account(
-        init,
-        payer = issuer,
-        space = DocumentRecord::MAX_SIZE,
-        seeds = [b"document", doc_hash.as_ref()],
-        bump
-    )]
-    ```
-  * If the SHA-256 file hash matches an already registered document, Solana's runtime rejects the initialization, preventing duplicate or overlapping registries.
+1. [Security Architecture & Zero Trust Philosophy](#1-security-architecture--zero-trust-philosophy)
+2. [Threat Model & Attack Surface Map](#2-threat-model--attack-surface-map)
+3. [Cryptographic Identity & Wallet Binding Invariants](#3-cryptographic-identity--wallet-binding-invariants)
+4. [Solana Anchor Program Derived Address (PDA) Isolation](#4-solana-anchor-program-derived-address-pda-isolation)
+5. [Dual-Layer Lockdown & Revocation Mechanics](#5-dual-layer-lockdown--revocation-mechanics)
+6. [Storage Immutability & IPFS Security](#6-storage-immutability--ipfs-security)
+7. [Database Protection & ORM Security](#7-database-protection--orm-security)
+8. [Session Management & JWT Hardening](#8-session-management--jwt-hardening)
+9. [Institutional Audit Checklist](#9-institutional-audit-checklist)
+10. [Vulnerability Disclosure Protocol](#10-vulnerability-disclosure-protocol)
 
 ---
 
-### 2. Unauthorized Revocation & Privilege Escalation (Access Control Bypass)
-* **The Threat:** A malicious agent or compromised key tries to revoke certificates issued by legitimate administrators.
-* **The Defense:**
-  * The Anchor program enforces structural owner-checks on the PDA storage accounts.
-  * In the revocation contract ([revoke_document.rs](file:///c:/Users/chira/OneDrive/ドキュメント/METABLOCK/METABLOCK/PROOFCHAIN/blockchain/programs/blockchain/src/instructions/revoke_document.rs)), the `has_one = issuer` constraint is defined:
-    ```rust
-    #[account(
-        mut,
-        seeds = [b"document", doc_hash.as_ref()],
-        bump = document_record.bump,
-        has_one = issuer
-    )]
-    pub document_record: Account<'info, DocumentRecord>,
-    pub issuer: Signer<'info>,
-    ```
-  * This automatically asserts that `document_record.issuer == issuer.key()`. If any other address attempts to sign the transaction, the instruction fails at the validator consensus level.
+## 1. Security Architecture & Zero Trust Philosophy
+
+ProofChain is designed under the core principle of Zero Trust Access: **Never Trust, Always Verify**.
+
+- **No Perimeter Trust**: Internal requests, authenticated sessions, and wallet connections are re-evaluated continuously.
+- **Dual-Identity Barrier**: Access requires valid Web2 credentials AND a cryptographically matching Web3 wallet signature.
+- **Immutability First**: State mutations (document issuance and revocation) require cryptographic signatures recorded on the Solana ledger.
 
 ---
 
-### 3. Cross-Site Scripting (XSS)
-* **The Threat:** Attackers input malicious JavaScript payloads in fields like user names, document titles, or emails, which execute inside another user's (e.g. Super Admin) dashboard.
-* **The Defense:**
-  * Express 5 query parameters (`req.query`) are read-only properties under getters. Standard sanitizers that overwrite query objects will crash the server.
-  * In [app.js](file:///c:/Users/chira/OneDrive/ドキュメント/METABLOCK/METABLOCK/PROOFCHAIN/backend/src/app.js), a custom, crash-free **in-place sanitization engine** targets `req.body`, `req.query`, and `req.params`:
-    ```javascript
-    const sanitizeHtml = (str) => {
-      if (typeof str !== 'string') return str;
-      return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#x27;')
-        .replace(/\//g, '&#x2F;');
-    };
-    ```
-  * This escaping engine mutates values directly within references, preventing script injections without breaking the Express 5 framework.
+## 2. Threat Model & Attack Surface Map
+
+```mermaid
+graph TD
+    classDef attacker fill:#450a0a,stroke:#ef4444,stroke-width:2px,color:#fff;
+    classDef ztna fill:#0f172a,stroke:#3b82f6,stroke-width:2px,color:#fff;
+    classDef system fill:#172554,stroke:#6366f1,stroke-width:2px,color:#fff;
+
+    ThreatActor((🦹 Threat Actor / Attacker)):::attacker
+    ZTNAGateway[🛡️ ZTNA Authentication Barrier]:::ztna
+    APIServer[⚙️ Express Gateway Server]:::system
+    Database[(💾 PostgreSQL Database)]:::system
+    SolanaProgram[(⛓️ Solana Anchor Contract)]:::system
+    IPFSGateway[(📦 Pinata IPFS Gateway)]:::system
+
+    ThreatActor -->|Attempt 1: Credential Theft / XSS| ZTNAGateway
+    ThreatActor -->|Attempt 2: Unauthorized API Mutation| APIServer
+    ThreatActor -->|Attempt 3: Direct Database Tampering| Database
+    ThreatActor -->|Attempt 4: On-Chain Forgery| SolanaProgram
+
+    ZTNAGateway -->|Validate Match & Token| APIServer
+    APIServer -->|Sanitize Inputs via ORM| Database
+    APIServer -->|Query Lock Status| IPFSGateway
+    SolanaProgram -->|Enforce Ed25519 Authority Signatures| SolanaProgram
+```
+
+### Threat Vectors & Mitigation Summary
+
+| Vector ID | Threat Description | Primary Mitigation | Cryptographic Guarantee |
+| :--- | :--- | :--- | :--- |
+| **TV-01** | Stolen Password Credentials | ZTNA Wallet Verification | Attacker lacks private key signature of bound wallet. |
+| **TV-02** | Database Tampering (Modifying doc status) | Solana PDA Verification | Verification checks on-chain state, ignoring local DB modifications. |
+| **TV-03** | Unauthorized Revocation Attempt | Anchor Issuer Verification | Smart contract verifies signer matches original PDA issuer public key. |
+| **TV-04** | Document Buffer Manipulation | SHA-256 + IPFS CID Hash | Any byte change results in a completely different document hash. |
+| **TV-05** | Session Hijacking via Browser Cache | Automatic Storage Flushing | Local storage session wiped on tab close / window unload. |
 
 ---
 
-### 4. Denial of Service (DoS) via Large Payloads & API Flooding
-* **The Threat:** Bad actors send extremely large JSON files or spam the upload/auth APIs to crash the Node process and degrade system availability.
-* **The Defense:**
-  * **Payload Limits:** App-wide JSON parsing in [app.js](file:///c:/Users/chira/OneDrive/ドキュメント/METABLOCK/METABLOCK/PROOFCHAIN/backend/src/app.js) is locked down to `10kb`:
-    ```javascript
-    app.use(express.json({ limit: '10kb' }));
-    ```
-  * **Rate Limiting:** Scoped `express-rate-limit` guards are deployed to defend against automated scans:
-    * `/api/auth`: Restricted to 10 attempts per 5 minutes.
-    * `/api/documents/upload`: Restricts file registration requests to 50 uploads per hour.
-    * Public routes: Dynamic fallback rate limits (100 requests per 15 minutes) protect General APIs.
+## 3. Cryptographic Identity & Wallet Binding Invariants
+
+ProofChain enforces three structural identity axioms in the database and application middleware:
+
+1. **Strict 1-to-1 Mapping**: Each user account is uniquely bound to one Solana wallet address (`User.walletAddress` `@unique`).
+2. **Session Eviction**: If the active Phantom wallet address changes during a session, the frontend instantly evicts the user and clears state.
+3. **Manual Re-connection Policy**: Zero-trust network access standard requires manual wallet connection on every session launch (auto-connect disabled).
 
 ---
 
-### 5. SQL Injection (SQLi)
-* **The Threat:** Attackers manipulate input parameters to execute raw commands on the Neon PostgreSQL database.
-* **The Defense:**
-  * ProofChain integrates **Prisma ORM**. Database queries are constructed using Prisma's query engine, which implements parameterized queries and prevents user inputs from altering SQL logic.
-  * System models (like `User`, `AuditLog`, and `DocumentRequest`) are strictly defined in [schema.prisma](file:///c:/Users/chira/OneDrive/ドキュメント/METABLOCK/METABLOCK/PROOFCHAIN/backend/prisma/schema.prisma) with explicit data-types.
+## 4. Solana Anchor Program Derived Address (PDA) Isolation
+
+Program Derived Addresses (PDAs) enable the smart contract to manage state without needing a private key.
+
+```mermaid
+flowchart LR
+    classDef seed fill:#1e1e2f,stroke:#10b981,stroke-width:2px,color:#fff;
+    classDef anchor fill:#1e1e2f,stroke:#f59e0b,stroke-width:2px,color:#fff;
+    classDef account fill:#312e81,stroke:#818cf8,stroke-width:2px,color:#fff;
+
+    SeedString["Seed: 'document'"]:::seed
+    DocHashSeed["Seed: SHA-256 Document Hash"]:::seed
+    AnchorProgram["ProofChain Anchor Program"]:::anchor
+    DerivedPDA["🔒 DocumentAccount PDA"]:::account
+
+    SeedString --> AnchorProgram
+    DocHashSeed --> AnchorProgram
+    AnchorProgram -->|Deterministic FindPDA| DerivedPDA
+```
+
+### Authority Verification Logic
+During revocation, the Anchor smart contract evaluates:
+- `require_keys_eq!(ctx.accounts.document.issuer, ctx.accounts.issuer.key(), ProofChainError::UnauthorizedIssuer)`
+
+Even if the backend server is completely compromised, an attacker cannot revoke on-chain documents without possessing the original issuer's hardware wallet key.
 
 ---
 
-### 6. Document Theft & Data Leakage (Privacy Exposure)
-* **The Threat:** Sensitive documents (e.g. employee IDs, grade transcripts, or medical records) are leaked to unauthorized parties when uploaded to a central database or a public blockchain.
-* **The Defense:**
-  * **Zero-Knowledge (ZK) Selective Disclosure:** The browser client implements a ZK proof simulator using salted hashes. Instead of uploading the raw document metadata, fields (like `name` and `email`) are salted and hashed individually to generate a combined root hash. When verifying claims, users can selectively disclose a field along with its salt; the verifier reconstructs the root hash to compare with the on-chain value without learning any redacted fields.
-  * **Client-Side Hashing:** When checking document validity, the file is hashed locally inside the browser using the native Web Crypto API (`crypto.subtle.digest`). The raw file is never uploaded to the backend server during verification.
+## 5. Dual-Layer Lockdown & Revocation Mechanics
+
+To handle situations where immediate document invalidation is required before blockchain transaction finality occurs, ProofChain uses a two-tier revocation model:
+
+1. **Soft Lock (IPFS Layer - Sub-second)**:
+   - Admin triggers lock in issuer dashboard.
+   - API sends metadata update to Pinata pinning service (`keyvalues: { isLocked: "true" }`).
+   - Public verification checks `/api/documents/public/:hash/status` and immediately flags document as temporarily locked.
+2. **Hard Lock (Solana Layer - Blockchain Settlement)**:
+   - Admin signs Solana transaction calling `revoke_document`.
+   - On-chain state updates `DocumentAccount.is_revoked = true`.
+   - Document is permanently and irreversibly marked revoked on the ledger.
 
 ---
 
-### 7. Broken Object Level Authorization (BOLA / IDOR)
-* **The Threat:** An authenticated standard user manipulates request URLs to view Super Admin records or access logs from other employees.
-* **The Defense:**
-  * Endpoints are protected by `authenticateToken` middleware which decodes and validates JWTs.
-  * Strict role-based checks (`requireRole(['ADMIN'])` or `requireRole(['SUPER_ADMIN'])`) are applied directly on routes. For example, Super Admin logs and dashboards utilize isolated router scopes that reject non-authorized tokens immediately.
+## 6. Storage Immutability & IPFS Security
+
+- **Content Addressing**: Files are stored and retrieved using IPFS CIDs derived from file contents. Content modifications automatically produce a different CID.
+- **Pin Persistence**: Document files are pinned using Pinata IPFS node clusters, ensuring high availability across geographic regions.
+- **Metadata Key-Value Control**: Key-value pairs attached to IPFS CIDs allow administrative soft-locking without altering the underlying file binary.
 
 ---
 
-### 8. HTTP Header & Session Hijacking
-* **The Threat:** Man-in-the-Middle (MitM) eavesdropping, clickjacking, or cross-site request forgery.
-* **The Defense:**
-  * The backend configures **Helmet.js** to secure response headers:
-    * **Content Security Policy (CSP):** Restricts script sources to `'self'` and blocks inline execution.
-    * **HTTP Strict Transport Security (HSTS):** Enforced for 365 days (`maxAge: 31536000`), including subdomains and preloading.
-    * **Frame Protection:** Frame embedding is disabled (`frameSrc: ["'none'"]`) to prevent Clickjacking.
-  * CORS settings restrict origin access to specific allowed domains and Vercel deployments, blocking unauthorized external fetch requests.
+## 7. Database Protection & ORM Security
+
+- **Parameterized Queries**: Prisma ORM converts all queries to parameterized SQL statements, eliminating SQL Injection vectors.
+- **Sensitive Data Exclusion**: Password hashes are stripped from JSON serialization in user queries.
+- **Least Privilege Access**: Production database users are scoped to necessary table operations only.
 
 ---
 
-### 9. QR Code Replay Attacks (Attendance Tracker)
-* **The Threat:** An employee copies another worker's QR attendance card to register fraudulent check-ins or check-outs.
-* **The Defense:**
-  * The system implements a deterministic state machine for scanning.
-  * When a QR code is read, the system fetches the user's last audit log. If the last recorded action was a check-in, the system only allows a check-out (computing working hours). If the last action was a check-out, the system registers a check-in.
-  * Timestamps are validated server-side based on the database transaction time, preventing local clock manipulation on the scanning device.
+## 8. Session Management & JWT Hardening
+
+- **Payload Minimalism**: JWT tokens contain only user ID and role metadata; sensitive credentials are excluded.
+- **Short Lifetime**: Access tokens are configured with short expiration windows.
+- **Role Verification Middleware**: Backend routes re-verify token signatures and roles on every HTTP request.
 
 ---
 
-## 🛡️ Malware & Client-Side Phishing Defenses
+## 9. Institutional Audit Checklist
 
-### Wallet Adapter Isolation
-ProofChain interacts with the Solana network via official, vetted wallet adapters (`@solana/wallet-adapter-react`). These adapters run inside isolated browser sandbox environments. Transactions are initiated by the application, but must be explicitly approved and signed inside the Phantom/Solana extension container, preventing malware from signing transactions silently.
+| Audit Category | Target Mechanism | Compliance Requirement | Verification Method |
+| :--- | :--- | :--- | :--- |
+| **Authentication** | ZTNA Dual-Auth | Web2 & Web3 credentials must both validate | Automated Integration Tests |
+| **Smart Contract** | Anchor Issuer Signer | `revoke_document` requires issuer signature | Anchor Program Mocha Tests |
+| **Data Integrity** | IPFS Pinning | Document hash must match file binary hash | Cryptographic SHA-256 check |
+| **Database** | Unique Wallet Constraint | `walletAddress` must be unique per user | Prisma Engine Constraints |
+| **Client Security** | Storage Invalidation | Wallet session purged on window unload | End-to-End Browser Testing |
 
-### Input Parameter Validation (Zod)
-Malicious inputs designed to exploit buffer overflows or language quirks (e.g. prototype pollution) are filtered out via **Zod schema validation** at the API gateway entry point before parsing. Any input containing anomalous characters or out-of-bound strings is rejected with an HTTP 400 response.
+---
+
+## 10. Vulnerability Disclosure Protocol
+
+Security researchers and institution auditors finding potential security issues should report findings through responsible disclosure:
+
+1. Send encrypted details directly to security leads.
+2. Provide step-by-step reproduction scenarios.
+3. Allow a 72-hour window for patch deployment before public disclosure.

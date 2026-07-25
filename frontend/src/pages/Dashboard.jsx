@@ -193,7 +193,7 @@ const Dashboard = () => {
 
   return (
     <div className="page-container animate-fade-in">
-      {/* Header */}
+      {}
       <div style={styles.header}>
         <div>
           <h1 style={{ marginBottom: '0.5rem' }}>
@@ -203,7 +203,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* QR Card */}
+      {}
       <div className="card-glow" style={styles.qrCard}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
           <div style={styles.qrWrapper}>
@@ -228,7 +228,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Certificates */}
+      {}
       <div style={{ marginTop: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
           <FileText size={20} color="var(--neon-cyan)" />

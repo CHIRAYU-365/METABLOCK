@@ -21,10 +21,14 @@ const apiLimiter = rateLimit({
 });
 
 router.use(apiLimiter);
+
+router.get('/public/:hash/status', documentsController.getPublicStatus);
+
 router.use(authenticateToken);
 
 router.post('/upload', requireRole(['ADMIN']), uploadLimiter, upload.single('file'), documentsController.upload);
 router.get('/', documentsController.getDocuments);
 router.get('/requests', requireRole(['ADMIN']), documentsController.getRequests);
+router.post('/:hash/lock', requireRole(['ADMIN', 'SUPER_ADMIN']), documentsController.toggleLock);
 
 module.exports = router;

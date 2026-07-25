@@ -1,5 +1,5 @@
-// src/utils/animation.js
-// Helper functions wrapping anime.js for common animation patterns
+
+
 
 export const fadeIn = (targets, options = {}) => {
   const { duration = 600, delay = 0, translateY = 0, easing = 'easeOutQuad' } = options;
@@ -37,7 +37,7 @@ export const scaleIn = (targets, options = {}) => {
   });
 };
 
-// React hook to trigger animation on mount
+
 import { useEffect } from 'react';
 export const useAnime = (ref, animationFn, ...args) => {
   useEffect(() => {

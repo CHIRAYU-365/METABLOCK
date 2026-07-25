@@ -14,8 +14,12 @@ import { Connection } from '@solana/web3.js';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import BulkUpload from '../components/BulkUpload';
 import { analyzeDocument } from '../utils/aiService';
+import { useLocation } from 'react-router-dom';
 
 const AdminDashboard = () => {
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const activeTab = queryParams.get('tab') || 'issue';
   const [documents, setDocuments] = useState([]);
   const [requests, setRequests] = useState([]);
   const [file, setFile] = useState(null);
@@ -186,6 +190,22 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleToggleLock = async (docHash, ipfsCid, currentLockedStatus) => {
+    try {
+      const res = await axios.post(`${API_URL}/api/documents/${docHash}/lock`, {
+        ipfsCid,
+        isLocked: !currentLockedStatus
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(res.data.message);
+      fetchDocuments();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to change lock status");
+    }
+  };
+
   const handleMintApprovedRequest = async (req) => {
     if (!wallet.connected) return toast.error("Please connect your wallet first");
     try {
@@ -253,8 +273,10 @@ const AdminDashboard = () => {
       </div>
 
       <div className="dashboard-grid">
-        {/* Upload Card */}
-        <div className="card-glow" style={styles.uploadCard}>
+        {activeTab === 'issue' && (
+          <>
+            {}
+            <div className="card-glow" style={styles.uploadCard}>
           <h3 style={{ marginBottom: '0.5rem' }}>
             <span className="gradient-text-subtle">Issue New Document</span>
           </h3>
@@ -305,38 +327,10 @@ const AdminDashboard = () => {
           </form>
         </div>
         
-        {/* Bulk Upload */}
+        {}
         <BulkUpload onComplete={fetchDocuments} />
         
-        {/* Chart */}
-        {chartData.length > 0 && (
-          <div className="card-glow" style={{ marginTop: '2rem', padding: '2rem', gridColumn: '1 / -1' }}>
-            <h3 style={{ marginBottom: '1.5rem' }}>
-              <span className="gradient-text-subtle">Certificates Issued Over Time</span>
-            </h3>
-            <div style={{ width: '100%', height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} />
-                  <YAxis stroke="var(--text-muted)" fontSize={12} allowDecimals={false} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)', borderRadius: '10px', fontFamily: 'Space Grotesk' }} 
-                    itemStyle={{ color: 'var(--neon-cyan)' }} 
-                  />
-                  <Line type="monotone" dataKey="documents" stroke="url(#chartGradient)" strokeWidth={3} dot={{ r: 4, fill: 'var(--neon-cyan)' }} activeDot={{ r: 6, fill: 'var(--neon-violet)' }} />
-                  <defs>
-                    <linearGradient id="chartGradient" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="var(--neon-cyan)" />
-                      <stop offset="100%" stopColor="var(--neon-violet)" />
-                    </linearGradient>
-                  </defs>
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-        
-        {/* Multi-Sig Requests */}
+        {}
         {requests.length > 0 && (
           <div style={{ gridColumn: '1 / -1', marginBottom: '2rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
@@ -371,8 +365,40 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
+        </>
+      )}
 
-        {/* Documents List */}
+      {activeTab === 'admin_stats' && (
+        <>
+        {}
+        {chartData.length > 0 && (
+          <div className="card-glow" style={{ marginTop: '2rem', padding: '2rem', gridColumn: '1 / -1' }}>
+            <h3 style={{ marginBottom: '1.5rem' }}>
+              <span className="gradient-text-subtle">Certificates Issued Over Time</span>
+            </h3>
+            <div style={{ width: '100%', height: 300 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} />
+                  <YAxis stroke="var(--text-muted)" fontSize={12} allowDecimals={false} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)', borderRadius: '10px', fontFamily: 'Space Grotesk' }} 
+                    itemStyle={{ color: 'var(--neon-cyan)' }} 
+                  />
+                  <Line type="monotone" dataKey="documents" stroke="url(#chartGradient)" strokeWidth={3} dot={{ r: 4, fill: 'var(--neon-cyan)' }} activeDot={{ r: 6, fill: 'var(--neon-violet)' }} />
+                  <defs>
+                    <linearGradient id="chartGradient" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="var(--neon-cyan)" />
+                      <stop offset="100%" stopColor="var(--neon-violet)" />
+                    </linearGradient>
+                  </defs>
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+        
+        {}
         <div style={{ gridColumn: '1 / -1' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -429,6 +455,9 @@ const AdminDashboard = () => {
                       {revokedDocs[doc.docHash] && (
                         <span className="badge badge-red" style={{ marginTop: '4px' }}>REVOKED ON BLOCKCHAIN</span>
                       )}
+                      {doc.isLocked && !revokedDocs[doc.docHash] && (
+                        <span className="badge badge-amber" style={{ marginTop: '4px' }}>TEMPORARILY LOCKED</span>
+                      )}
                       {(doc.aiDocType || doc.aiKeywords) && (
                         <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                           <span className="badge badge-violet">{doc.aiDocType || 'General'}</span>
@@ -448,13 +477,22 @@ const AdminDashboard = () => {
                     {revokedDocs[doc.docHash] ? (
                       <span className="badge badge-red" style={{ padding: '6px 10px' }}>Revoked</span>
                     ) : (
-                      <button 
-                        className="btn-danger" 
-                        onClick={() => handleRevoke(doc.docHash)} 
-                        style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                      >
-                        Revoke
-                      </button>
+                      <>
+                        <button 
+                          className="btn-outline" 
+                          onClick={() => handleToggleLock(doc.docHash, doc.ipfsCid, doc.isLocked)} 
+                          style={{ padding: '6px 12px', fontSize: '0.8rem', borderColor: doc.isLocked ? 'var(--neon-green)' : 'var(--neon-amber)', color: doc.isLocked ? 'var(--neon-green)' : 'var(--neon-amber)' }}
+                        >
+                          {doc.isLocked ? 'Unlock' : 'Lock'}
+                        </button>
+                        <button 
+                          className="btn-danger" 
+                          onClick={() => handleRevoke(doc.docHash)} 
+                          style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                        >
+                          Revoke
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -462,6 +500,8 @@ const AdminDashboard = () => {
             </div>
           )}
         </div>
+        </>
+      )}
       </div>
     </div>
   );

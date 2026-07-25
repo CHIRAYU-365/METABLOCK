@@ -23,6 +23,7 @@ const SuperAdminDashboard = () => {
   const [chartData, setChartData] = useState([]);
   const [users, setUsers] = useState([]);
   const [requests, setRequests] = useState([]);
+  const [allDocs, setAllDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const { token, user } = useAuth();
   useEffect(() => {
@@ -33,15 +34,17 @@ const SuperAdminDashboard = () => {
     setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const [statsRes, usersRes, requestsRes] = await Promise.all([
+      const [statsRes, usersRes, requestsRes, docsRes] = await Promise.all([
         axios.get(`${API_URL}/api/superadmin/dashboard`, { headers }),
         axios.get(`${API_URL}/api/superadmin/users`, { headers }),
-        axios.get(`${API_URL}/api/superadmin/requests`, { headers }).catch(() => ({ data: { requests: [] } }))
+        axios.get(`${API_URL}/api/superadmin/requests`, { headers }).catch(() => ({ data: { requests: [] } })),
+        axios.get(`${API_URL}/api/documents`, { headers }).catch(() => ({ data: { allDocs: [] } }))
       ]);
       setStats(statsRes.data.stats);
       setChartData(statsRes.data.chartData || []);
       setUsers(usersRes.data.users);
       setRequests(requestsRes.data.requests || []);
+      setAllDocs(docsRes.data.allDocs || []);
     } catch (err) {
       console.error(err);
       toast.error("Failed to load admin data");
@@ -333,6 +336,22 @@ const SuperAdminDashboard = () => {
                     <td style={styles.td}>
                       <div style={{ fontWeight: '500' }}>{u.username}</div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{u.email}</div>
+                      {allDocs.filter(d => d.ownerEmail === u.email).length > 0 && (
+                        <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>DOCUMENTS:</span>
+                          {allDocs.filter(d => d.ownerEmail === u.email).map(d => (
+                            <a 
+                              key={d.docHash} 
+                              href={`https://gateway.pinata.cloud/ipfs/${d.ipfsCid}`} 
+                              target="_blank" 
+                              rel="noreferrer"
+                              style={{ fontSize: '0.75rem', color: 'var(--neon-cyan)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              <FileSpreadsheet size={12} /> {d.name}
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td style={styles.td}>
                       <select 

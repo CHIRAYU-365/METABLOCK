@@ -25,7 +25,7 @@ import './index.css';
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   const wallet = useWallet();
-  if (loading) return <Loader />;
+  if (loading || wallet.connecting) return <Loader />;
   if (!user || !wallet.connected) return <Navigate to="/" replace />;
   return children;
 };
@@ -36,17 +36,23 @@ const RoleDashboard = () => {
   const queryParams = new URLSearchParams(location.search);
   const tab = queryParams.get('tab') || (user?.role === 'SUPER_ADMIN' ? 'overview' : user?.role === 'ADMIN' ? 'issue' : 'mydocs');
 
-  // Super Admin specific tabs
-  if ((tab === 'overview' || tab === 'users' || tab === 'requests') && user?.role === 'SUPER_ADMIN') {
+  
+  if (user?.role === 'SUPER_ADMIN') {
+    if (!['overview', 'users', 'requests'].includes(tab)) {
+      return <Navigate to="/dashboard?tab=overview" replace />;
+    }
     return <SuperAdminDashboard />;
   }
 
-  // Admin specific tabs (Super Admin inherits these)
-  if ((tab === 'issue' || tab === 'admin_stats') && (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN')) {
+  
+  if (user?.role === 'ADMIN') {
+    if (!['issue', 'admin_stats'].includes(tab)) {
+      return <Navigate to="/dashboard?tab=issue" replace />;
+    }
     return <AdminDashboard />;
   }
 
-  // Default / User tab (Everyone can see their own documents)
+  
   return <Dashboard />; 
 };
 
@@ -113,11 +119,11 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
-  // Enforce ZTNA: Clear previous wallet adapter states to ensure manual reconnection is always required
+  
   useEffect(() => {
     localStorage.removeItem('walletName');
     
-    // Explicitly disconnect if closing window
+    
     const handleUnload = () => {
       localStorage.removeItem('walletName');
     };

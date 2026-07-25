@@ -1,17 +1,20 @@
-# Anchor/Solana build artifacts
+# Anchor & Solana Blockchain .gitignore for ProofChain
+
+# Anchor & Solana Build Artifacts
 target/
 .anchor/
 
-# Local test validator ledger
+# Local Test Validator Ledger
 test-ledger/
 
-# Private keypairs (Strictly ignore all keys)
+# Private Keys & Wallets (STRICT SECURITY)
 *.keypair.json
 *-keypair.json
 *-upgrade-buffer.json
 *local-wallet.json
+id.json
 
-# IDEs and Editors
+# IDEs & Editors
 .idea/
 .vscode/
 *.swp
@@ -20,3 +23,4 @@ test-ledger/
 # OS Files
 .DS_Store
 Thumbs.db
+Desktop.ini

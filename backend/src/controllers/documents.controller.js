@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { uploadDocument, listDocumentsByKeyValue } = require('../services/pinata.service');
+const { uploadDocument, listDocumentsByKeyValue, listAllDocuments, updateDocumentMetadata } = require('../services/pinata.service');
 const auditService = require('../services/audit.service');
 const emailService = require('../services/email.service');
 const prisma = new PrismaClient();
@@ -97,14 +97,28 @@ const getDocuments = async (req, res) => {
       docHash: file.metadata.keyvalues.docHash,
       ownerEmail: file.metadata.keyvalues.ownerEmail,
       aiDocType: file.metadata.keyvalues.aiDocType,
+      aiDocType: file.metadata.keyvalues.aiDocType,
       aiKeywords: file.metadata.keyvalues.aiKeywords,
+      isLocked: file.metadata.keyvalues.isLocked === 'true',
       createdAt: file.date_pinned
     }));
     return res.json({ issuedDocs });
   }
   
   if (req.user.role === 'SUPER_ADMIN') {
-    return res.json({ allDocs: [] });
+    const files = await listAllDocuments();
+    const allDocs = files.map(file => ({
+      id: file.id,
+      name: file.metadata.name,
+      ipfsCid: file.ipfs_pin_hash,
+      docHash: file.metadata.keyvalues.docHash,
+      ownerEmail: file.metadata.keyvalues.ownerEmail,
+      ownerId: file.metadata.keyvalues.ownerId,
+      issuerEmail: file.metadata.keyvalues.issuerEmail,
+      isLocked: file.metadata.keyvalues.isLocked === 'true',
+      createdAt: file.date_pinned
+    }));
+    return res.json({ allDocs });
   }
 };
 
@@ -116,10 +130,53 @@ const getRequests = async (req, res) => {
   res.json({ requests });
 };
 
+const getPublicStatus = async (req, res) => {
+  try {
+    const files = await listDocumentsByKeyValue("docHash", req.params.hash);
+    if (!files || files.length === 0) {
+      return res.json({ isLocked: false }); 
+    }
+    const isLocked = files[0].metadata.keyvalues.isLocked === 'true';
+    res.json({ isLocked });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to check status" });
+  }
+};
 
+
+
+const toggleLock = async (req, res) => {
+  try {
+    const { ipfsCid, isLocked } = req.body;
+    if (!ipfsCid) return res.status(400).json({ error: "Missing ipfsCid" });
+    
+    
+    if (req.user.role === 'USER') return res.status(403).json({ error: "Unauthorized" });
+
+    
+    const files = await listDocumentsByKeyValue("docHash", req.params.hash);
+    if (!files || files.length === 0) return res.status(404).json({ error: "Document not found" });
+    
+    const file = files[0];
+    const newKeyValues = {
+      ...file.metadata.keyvalues,
+      isLocked: isLocked ? 'true' : 'false'
+    };
+
+    await updateDocumentMetadata(ipfsCid, newKeyValues);
+    await auditService.logAction(req.user.id, isLocked ? 'DOCUMENT_LOCKED' : 'DOCUMENT_UNLOCKED', `Toggled lock status for document ${req.params.hash}`, req.ip);
+
+    res.json({ message: `Document successfully ${isLocked ? 'locked' : 'unlocked'}`, isLocked });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update lock status" });
+  }
+};
 
 module.exports = {
   upload,
   getDocuments,
-  getRequests
+  getRequests,
+  toggleLock,
+  getPublicStatus
 };

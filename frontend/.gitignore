@@ -1,16 +1,29 @@
+# Frontend .gitignore for ProofChain
+
 # Dependencies
 node_modules/
 
-# Build outputs
+# Build Outputs
 dist/
 build/
+dist-ssr/
 
-# Environment configurations
+# Environment Configurations
 .env
 .env.*
+!.env.example
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# IDEs and Editors
+# Tooling Caches
+.vite/
+.cache/
+.eslintcache
+.parcel-cache/
+
+# IDEs & Editors
 .idea/
 .vscode/
 *.swp
@@ -19,8 +32,8 @@ build/
 # OS Files
 .DS_Store
 Thumbs.db
+Desktop.ini
 
-# Linter & Bundler Caches
-.eslintcache
-.vite/
-.cache/
+# Scratch Files
+run_build.js
+build_output.txt

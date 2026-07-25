@@ -31,6 +31,7 @@ const loginSchema = z.object({
 router.post('/register', authLimiter, validate(registerSchema), authController.register);
 router.post('/login', authLimiter, validate(loginSchema), authController.login);
 router.get('/me', authenticateToken, authController.getMe);
+router.post('/link-wallet', authenticateToken, authController.linkWallet);
 router.post('/qr-attendance', authController.qrAttendance);
 
 module.exports = router;

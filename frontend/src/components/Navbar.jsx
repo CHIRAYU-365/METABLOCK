@@ -17,7 +17,7 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close mobile menu on route change
+  
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
@@ -36,7 +36,7 @@ const Navbar = () => {
         ...(scrolled ? styles.navScrolled : {}),
       }}>
         <div style={styles.inner}>
-          {/* Logo */}
+          {}
           <Link to="/" style={styles.logoLink}>
             <div style={styles.logoIcon}>
               <span style={styles.logoGlyph}>P</span>
@@ -44,8 +44,16 @@ const Navbar = () => {
             <span style={styles.logoText}>ProofChain</span>
           </Link>
 
-          {/* Desktop Nav */}
+          {}
           <div style={styles.desktopNav}>
+            {(!user || user.role !== 'SUPER_ADMIN') && (
+              <Link 
+                to="/verify" 
+                style={{ ...styles.navLink, ...(isActive('/verify') ? styles.navLinkActive : {}) }}
+              >
+                Verify
+              </Link>
+            )}
 
             {!user && (
               <Link 
@@ -67,6 +75,14 @@ const Navbar = () => {
                     <span style={styles.roleBadge}>{user.role.replace('_', ' ')}</span>
                   )}
                 </Link>
+                {user.role === 'ADMIN' && (
+                  <Link 
+                    to="/dashboard?tab=admin_stats" 
+                    style={{ ...styles.navLink, ...(location.search.includes('tab=admin_stats') ? styles.navLinkActive : {}) }}
+                  >
+                    Issued Documents
+                  </Link>
+                )}
                 {user.role === 'SUPER_ADMIN' && (
                   <>
                     <Link 
@@ -87,7 +103,7 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Right side */}
+          {}
           <div style={styles.rightGroup}>
             <div style={styles.walletWrapper}>
               <WalletMultiButton />
@@ -106,23 +122,34 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Neon bottom border */}
+        {}
         <div style={{
           ...styles.glowLine,
           opacity: scrolled ? 1 : 0
         }} />
       </nav>
 
-      {/* Mobile Menu */}
+      {}
       {mobileOpen && (
         <div style={styles.mobileMenu}>
           <div style={styles.mobileMenuInner}>
-            <Link to="/" style={styles.mobileLink}>Home</Link>
-            <Link to="/verify" style={styles.mobileLink}>Verify Document</Link>
+            {(!user || user.role !== 'SUPER_ADMIN') && (
+              <Link to="/verify" style={styles.mobileLink}>Verify Document</Link>
+            )}
             {user && (
-              <Link to="/dashboard" style={styles.mobileLink}>
-                Dashboard
-              </Link>
+              <>
+                <Link 
+                  to={user.role === 'SUPER_ADMIN' ? "/dashboard?tab=overview" : user.role === 'ADMIN' ? "/dashboard?tab=issue" : "/dashboard?tab=mydocs"} 
+                  style={styles.mobileLink}
+                >
+                  Dashboard
+                </Link>
+                {user.role === 'ADMIN' && (
+                  <Link to="/dashboard?tab=admin_stats" style={styles.mobileLink}>
+                    Issued Documents
+                  </Link>
+                )}
+              </>
             )}
             {user && (
               <button onClick={handleLogout} style={{ ...styles.mobileLink, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}>
@@ -133,7 +160,7 @@ const Navbar = () => {
         </div>
       )}
 
-      {/* Spacer */}
+      {}
       <div style={{ height: '72px' }} />
     </>
   );
@@ -237,7 +264,7 @@ const styles = {
     gap: '0.75rem'
   },
   walletWrapper: {
-    // WalletMultiButton styles are in index.css
+    
   },
   logoutBtn: {
     display: 'flex',
@@ -304,7 +331,7 @@ const styles = {
   }
 };
 
-// Add responsive styles via media query
+
 const styleSheet = document.createElement('style');
 styleSheet.textContent = `
   @media (max-width: 768px) {

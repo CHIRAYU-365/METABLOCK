@@ -1,0 +1,527 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Shield, Zap, Lock, FileCheck, ArrowRight, ChevronDown } from 'lucide-react';
+
+const Home = () => {
+  const [counters, setCounters] = useState({ docs: 0, txns: 0, uptime: 0 });
+  const heroRef = useRef(null);
+  const statsRef = useRef(null);
+  const featuresRef = useRef(null);
+
+  // Animated counters
+  useEffect(() => {
+    const targets = { docs: 12847, txns: 45230, uptime: 99.9 };
+    const duration = 2000;
+    const start = Date.now();
+
+    const timer = setInterval(() => {
+      const elapsed = Date.now() - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+
+      setCounters({
+        docs: Math.floor(eased * targets.docs),
+        txns: Math.floor(eased * targets.txns),
+        uptime: parseFloat((eased * targets.uptime).toFixed(1))
+      });
+
+      if (progress >= 1) clearInterval(timer);
+    }, 16);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Intersection observer for scroll animations
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    const sections = document.querySelectorAll('.reveal-section');
+    sections.forEach(s => observer.observe(s));
+    return () => sections.forEach(s => observer.unobserve(s));
+  }, []);
+
+  return (
+    <div style={{ overflow: 'hidden' }}>
+      {/* ════════ HERO SECTION ════════ */}
+      <section ref={heroRef} style={styles.hero}>
+        {/* Grid background */}
+        <div style={styles.gridBg} />
+        
+        {/* Floating orbs */}
+        <div style={{ ...styles.orb, ...styles.orb1 }} />
+        <div style={{ ...styles.orb, ...styles.orb2 }} />
+        <div style={{ ...styles.orb, ...styles.orb3 }} />
+
+        <div style={styles.heroContent} className="animate-fade-in">
+          <div style={styles.heroBadge} className="animate-fade-in-delay-1">
+            <span style={styles.pulseDot} />
+            <span>Powered by Solana Blockchain</span>
+          </div>
+
+          <h1 style={styles.heroTitle}>
+            Immutable Document<br />
+            <span className="gradient-text">Verification</span>
+          </h1>
+
+          <p style={styles.heroSubtitle} className="animate-fade-in-delay-2">
+            Cryptographically secure document notarization on Solana. 
+            Zero-knowledge proofs ensure privacy while maintaining 
+            verifiable authenticity on an immutable ledger.
+          </p>
+
+          <div style={styles.heroCtas} className="animate-fade-in-delay-3">
+            <Link to="/verify" className="btn-primary" style={styles.ctaBtn}>
+              <FileCheck size={18} />
+              Verify a Document
+              <ArrowRight size={16} />
+            </Link>
+            <Link to="/login" className="btn-outline" style={styles.ctaBtn}>
+              Admin Portal
+            </Link>
+          </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div style={styles.scrollIndicator} className="animate-fade-in-delay-3">
+          <ChevronDown size={20} style={{ animation: 'float 2s ease-in-out infinite' }} />
+        </div>
+      </section>
+
+      {/* ════════ STATS BAR ════════ */}
+      <section ref={statsRef} className="reveal-section" style={styles.statsSection}>
+        <div style={styles.statsGrid}>
+          <div style={styles.statItem}>
+            <span style={styles.statNumber} className="gradient-text">{counters.docs.toLocaleString()}</span>
+            <span style={styles.statLabel}>Documents Verified</span>
+          </div>
+          <div style={styles.statDivider} />
+          <div style={styles.statItem}>
+            <span style={styles.statNumber} className="gradient-text">{counters.txns.toLocaleString()}</span>
+            <span style={styles.statLabel}>Blockchain Transactions</span>
+          </div>
+          <div style={styles.statDivider} />
+          <div style={styles.statItem}>
+            <span style={styles.statNumber} className="gradient-text">{counters.uptime}%</span>
+            <span style={styles.statLabel}>Network Uptime</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ════════ FEATURES ════════ */}
+      <section ref={featuresRef} style={styles.featuresSection}>
+        <div className="reveal-section" style={{ textAlign: 'center', marginBottom: '4rem' }}>
+          <h2 style={{ marginBottom: '1rem' }}>
+            Why <span className="gradient-text">ProofChain</span>?
+          </h2>
+          <p style={{ maxWidth: '600px', margin: '0 auto', color: 'var(--text-secondary)' }}>
+            Enterprise-grade document verification built on decentralized infrastructure.
+            Every document gets a unique cryptographic fingerprint stored forever on-chain.
+          </p>
+        </div>
+
+        <div style={styles.featuresGrid}>
+          {features.map((f, i) => (
+            <div
+              key={f.title}
+              className="card-glow reveal-section"
+              style={{ ...styles.featureCard, animationDelay: `${i * 0.1}s` }}
+            >
+              <div style={{ ...styles.featureIcon, background: f.iconBg }}>
+                {f.icon}
+              </div>
+              <h3 style={styles.featureTitle}>{f.title}</h3>
+              <p style={styles.featureDesc}>{f.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ════════ HOW IT WORKS ════════ */}
+      <section style={styles.howSection}>
+        <div className="reveal-section" style={{ textAlign: 'center', marginBottom: '4rem' }}>
+          <h2 style={{ marginBottom: '1rem' }}>
+            How It <span className="gradient-text">Works</span>
+          </h2>
+        </div>
+
+        <div style={styles.stepsGrid}>
+          {steps.map((step, i) => (
+            <div key={i} className="reveal-section" style={styles.stepItem}>
+              <div style={styles.stepNumber}>
+                <span className="gradient-text" style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+              </div>
+              <h4 style={{ marginBottom: '0.5rem' }}>{step.title}</h4>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+                {step.desc}
+              </p>
+              {i < steps.length - 1 && (
+                <div style={styles.stepConnector} />
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ════════ CTA BANNER ════════ */}
+      <section style={styles.ctaSection}>
+        <div className="card-glow reveal-section" style={styles.ctaBanner}>
+          <h2 style={{ marginBottom: '1rem' }}>
+            Ready to verify with <span className="gradient-text">zero trust</span>?
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', maxWidth: '500px', margin: '0 auto 2rem' }}>
+            Upload any document and verify its authenticity against the Solana blockchain in seconds. 
+            No account required.
+          </p>
+          <Link to="/verify" className="btn-primary" style={{ ...styles.ctaBtn, fontSize: '1.05rem' }}>
+            <Shield size={20} />
+            Start Verifying
+            <ArrowRight size={18} />
+          </Link>
+        </div>
+      </section>
+
+      {/* ════════ FOOTER ════════ */}
+      <footer style={styles.footer}>
+        <div style={styles.footerContent}>
+          <div>
+            <h3 className="gradient-text" style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>ProofChain</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              Blockchain Document Verification Platform
+            </p>
+          </div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            Built on Solana • Secured by Cryptography • Powered by IPFS
+          </div>
+        </div>
+      </footer>
+
+      <style>{`
+        .reveal-section {
+          opacity: 0;
+          transform: translateY(30px);
+          transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+                      transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal-section.visible {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      `}</style>
+    </div>
+  );
+};
+
+const features = [
+  {
+    icon: <Shield size={24} color="#00F0FF" />,
+    iconBg: 'rgba(0, 240, 255, 0.1)',
+    title: 'Zero-Knowledge Proofs',
+    description: 'Verify document authenticity without revealing sensitive content using cryptographic selective disclosure.'
+  },
+  {
+    icon: <Lock size={24} color="#8B5CF6" />,
+    iconBg: 'rgba(139, 92, 246, 0.1)',
+    title: 'IPFS Decentralized Storage',
+    description: 'Documents are pinned on IPFS with content-addressed hashing — immutable, distributed, and permanent.'
+  },
+  {
+    icon: <Zap size={24} color="#EC4899" />,
+    iconBg: 'rgba(236, 72, 153, 0.1)',
+    title: 'Solana Speed',
+    description: 'Sub-second finality with Solana\'s 400ms block times. Verify documents in real-time across the globe.'
+  },
+  {
+    icon: <FileCheck size={24} color="#10B981" />,
+    iconBg: 'rgba(16, 185, 129, 0.1)',
+    title: 'Tamper-Proof Records',
+    description: 'SHA-256 document hashes stored on-chain create an unforgeable audit trail for every credential issued.'
+  }
+];
+
+const steps = [
+  {
+    title: 'Upload Document',
+    desc: 'An admin uploads the document. A SHA-256 hash is computed client-side — the file never leaves your browser.'
+  },
+  {
+    title: 'Blockchain Registration',
+    desc: 'The document hash and IPFS CID are written to a Solana Program Derived Address (PDA) via Anchor.'
+  },
+  {
+    title: 'Instant Verification',
+    desc: 'Anyone can verify authenticity by uploading the same document. Its hash is compared against the on-chain record.'
+  }
+];
+
+const styles = {
+  hero: {
+    minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    padding: '2rem',
+    overflow: 'hidden'
+  },
+  gridBg: {
+    position: 'absolute',
+    inset: 0,
+    backgroundImage: `
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)
+    `,
+    backgroundSize: '60px 60px',
+    maskImage: 'radial-gradient(ellipse 70% 50% at 50% 50%, black 40%, transparent 100%)',
+    WebkitMaskImage: 'radial-gradient(ellipse 70% 50% at 50% 50%, black 40%, transparent 100%)'
+  },
+  orb: {
+    position: 'absolute',
+    borderRadius: '50%',
+    filter: 'blur(80px)',
+    pointerEvents: 'none'
+  },
+  orb1: {
+    width: '500px',
+    height: '500px',
+    background: 'rgba(0, 240, 255, 0.08)',
+    top: '10%',
+    left: '-10%',
+    animation: 'float 8s ease-in-out infinite'
+  },
+  orb2: {
+    width: '400px',
+    height: '400px',
+    background: 'rgba(139, 92, 246, 0.08)',
+    top: '30%',
+    right: '-5%',
+    animation: 'float 10s ease-in-out infinite reverse'
+  },
+  orb3: {
+    width: '300px',
+    height: '300px',
+    background: 'rgba(236, 72, 153, 0.06)',
+    bottom: '10%',
+    left: '30%',
+    animation: 'float 12s ease-in-out infinite'
+  },
+  heroContent: {
+    textAlign: 'center',
+    maxWidth: '800px',
+    position: 'relative',
+    zIndex: 2
+  },
+  heroBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '6px 16px',
+    borderRadius: '9999px',
+    background: 'rgba(0, 240, 255, 0.06)',
+    border: '1px solid rgba(0, 240, 255, 0.15)',
+    fontSize: '0.8rem',
+    color: 'var(--neon-cyan)',
+    marginBottom: '2rem',
+    fontWeight: 500,
+    letterSpacing: '0.02em'
+  },
+  pulseDot: {
+    width: '6px',
+    height: '6px',
+    borderRadius: '50%',
+    background: 'var(--neon-green)',
+    boxShadow: '0 0 8px var(--neon-green)',
+    animation: 'pulse 2s ease-in-out infinite'
+  },
+  heroTitle: {
+    fontSize: 'clamp(2.5rem, 6vw, 4.5rem)',
+    fontFamily: 'var(--font-display)',
+    fontWeight: 900,
+    letterSpacing: '-0.04em',
+    lineHeight: 1.05,
+    marginBottom: '1.5rem',
+    color: 'var(--text-primary)'
+  },
+  heroSubtitle: {
+    fontSize: 'clamp(1rem, 2vw, 1.2rem)',
+    color: 'var(--text-secondary)',
+    maxWidth: '600px',
+    margin: '0 auto 2.5rem',
+    lineHeight: 1.7
+  },
+  heroCtas: {
+    display: 'flex',
+    gap: '1rem',
+    justifyContent: 'center',
+    flexWrap: 'wrap'
+  },
+  ctaBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '14px 28px',
+    fontSize: '1rem',
+    fontWeight: 600,
+    textDecoration: 'none'
+  },
+  scrollIndicator: {
+    position: 'absolute',
+    bottom: '2rem',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    color: 'var(--text-muted)',
+    opacity: 0.5
+  },
+  // Stats
+  statsSection: {
+    padding: '4rem 2rem',
+    borderTop: '1px solid var(--border-subtle)',
+    borderBottom: '1px solid var(--border-subtle)',
+    background: 'rgba(0, 0, 0, 0.3)'
+  },
+  statsGrid: {
+    maxWidth: '900px',
+    margin: '0 auto',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '3rem',
+    flexWrap: 'wrap'
+  },
+  statItem: {
+    textAlign: 'center'
+  },
+  statNumber: {
+    display: 'block',
+    fontFamily: 'var(--font-display)',
+    fontSize: 'clamp(2rem, 4vw, 3rem)',
+    fontWeight: 800,
+    lineHeight: 1,
+    marginBottom: '0.5rem'
+  },
+  statLabel: {
+    fontSize: '0.8rem',
+    color: 'var(--text-muted)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    fontWeight: 500
+  },
+  statDivider: {
+    width: '1px',
+    height: '60px',
+    background: 'var(--border-default)'
+  },
+  // Features
+  featuresSection: {
+    padding: '6rem 2rem',
+    maxWidth: '1200px',
+    margin: '0 auto'
+  },
+  featuresGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+    gap: '1.5rem'
+  },
+  featureCard: {
+    padding: '2rem',
+    cursor: 'default'
+  },
+  featureIcon: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: '1.25rem'
+  },
+  featureTitle: {
+    fontSize: '1.1rem',
+    fontWeight: 600,
+    marginBottom: '0.75rem',
+    color: 'var(--text-primary)'
+  },
+  featureDesc: {
+    fontSize: '0.9rem',
+    color: 'var(--text-secondary)',
+    lineHeight: 1.7
+  },
+  // How it works
+  howSection: {
+    padding: '6rem 2rem',
+    maxWidth: '900px',
+    margin: '0 auto'
+  },
+  stepsGrid: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2.5rem'
+  },
+  stepItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    textAlign: 'center',
+    position: 'relative'
+  },
+  stepNumber: {
+    width: '56px',
+    height: '56px',
+    borderRadius: '50%',
+    border: '1px solid var(--border-glow)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: '1rem',
+    background: 'var(--bg-glass)',
+    backdropFilter: 'blur(10px)',
+    boxShadow: '0 0 20px rgba(0, 240, 255, 0.05)'
+  },
+  stepConnector: {
+    position: 'absolute',
+    bottom: '-1.5rem',
+    width: '1px',
+    height: '1.5rem',
+    background: 'linear-gradient(to bottom, var(--border-glow), transparent)'
+  },
+  // CTA
+  ctaSection: {
+    padding: '4rem 2rem 6rem',
+    maxWidth: '800px',
+    margin: '0 auto'
+  },
+  ctaBanner: {
+    padding: '4rem',
+    textAlign: 'center',
+    position: 'relative',
+    overflow: 'hidden'
+  },
+  // Footer
+  footer: {
+    borderTop: '1px solid var(--border-subtle)',
+    padding: '2rem',
+    background: 'rgba(0, 0, 0, 0.3)'
+  },
+  footerContent: {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '1rem'
+  }
+};
+
+export default Home;

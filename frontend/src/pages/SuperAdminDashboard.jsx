@@ -119,32 +119,32 @@ const SuperAdminDashboard = () => {
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 24px Outfit, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('MetaBlock', 200, 60);
+    ctx.fillText('ProofChain', 200, 60);
 
-    ctx.fillStyle = '#a855f7';
-    ctx.font = 'bold 11px Inter, sans-serif';
-    ctx.fillText('A WEB 3.0 COMPANY', 200, 80);
+    ctx.fillStyle = '#00F0FF';
+    ctx.font = 'bold 11px Space Grotesk, sans-serif';
+    ctx.fillText('BLOCKCHAIN VERIFIED', 200, 80);
 
-    ctx.fillStyle = '#a1a1aa';
-    ctx.font = '10px Inter, sans-serif';
-    ctx.fillText('CIN: ABC1182', 200, 95);
+    ctx.fillStyle = '#71717A';
+    ctx.font = '10px Space Grotesk, sans-serif';
+    ctx.fillText('Document Verification Platform', 200, 95);
 
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
     ctx.beginPath();
     ctx.moveTo(40, 110);
     ctx.lineTo(360, 110);
     ctx.stroke();
 
-    ctx.fillStyle = '#6366f1';
+    ctx.fillStyle = '#00F0FF';
     ctx.font = 'bold 18px Outfit, sans-serif';
     ctx.fillText(name.toUpperCase(), 200, 160);
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'italic 14px Inter, sans-serif';
+    ctx.fillStyle = '#F0F0F5';
+    ctx.font = 'italic 14px Space Grotesk, sans-serif';
     ctx.fillText(designation, 200, 190);
 
-    ctx.fillStyle = '#a1a1aa';
-    ctx.font = '12px Inter, sans-serif';
+    ctx.fillStyle = '#71717A';
+    ctx.font = '12px Space Grotesk, sans-serif';
     ctx.fillText(email, 200, 215);
 
     const svgElement = document.querySelector(`svg[data-qr="${userId}"]`);
@@ -175,19 +175,19 @@ const SuperAdminDashboard = () => {
       ctx.lineTo(360, 450);
       ctx.stroke();
 
-      ctx.fillStyle = '#a1a1aa';
-      ctx.font = '9px Inter, sans-serif';
-      ctx.fillText('36/12, Kriran Path, Mansarovar, Jaipur, RJ', 200, 480);
-      ctx.fillText('Phone: +91-78777 00648 | Website: www.metablocktech.com', 200, 500);
+      ctx.fillStyle = '#71717A';
+      ctx.font = '9px Space Grotesk, sans-serif';
+      ctx.fillText('Blockchain Document Verification', 200, 480);
+      ctx.fillText('Powered by Solana & IPFS', 200, 500);
 
-      ctx.fillStyle = '#6366f1';
-      ctx.font = 'bold 10px Inter, sans-serif';
+      ctx.fillStyle = '#00F0FF';
+      ctx.font = 'bold 10px Space Grotesk, sans-serif';
       ctx.fillText('EMPLOYEE ATTENDANCE CARD', 200, 540);
 
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.href = dataUrl;
-      link.download = `${name.replace(/\s+/g, '_')}_MetaBlock_ID.png`;
+      link.download = `${name.replace(/\s+/g, '_')}_ProofChain_ID.png`;
       link.click();
     };
     qrImg.src = url;
@@ -244,9 +244,11 @@ const SuperAdminDashboard = () => {
   };
 
   return (
-    <div className="animate-fade-in">
+    <div className="page-container animate-fade-in">
       <div style={styles.header}>
-        <h1>Super Admin Dashboard</h1>
+        <h1 style={{ marginBottom: '0.5rem' }}>
+          <span className="gradient-text">Super Admin</span> Dashboard
+        </h1>
         <p style={{ color: 'var(--text-secondary)' }}>Welcome back, {user?.username}. Manage the platform's roles and privileges here.</p>
       </div>
       <div style={styles.statsGrid}>

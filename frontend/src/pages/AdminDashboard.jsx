@@ -5,7 +5,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useAuth } from '../context/AuthContext';
 import { calculateSHA256 } from '../utils/hash';
 import { abstractHash } from '../utils/mask';
-import { getProvider, PROGRAM_ID, getDocumentPda, SOLANA_RPC_ENDPOINT } from '../utils/solana';
+import { getProvider, detectRpcEndpoint, PROGRAM_ID, getDocumentPda, SOLANA_RPC_ENDPOINT } from '../utils/solana';
 import idl from '../utils/blockchain.json';
 import toast from 'react-hot-toast';
 import { Copy, ExternalLink, Check, QrCode, Mail } from 'lucide-react';
@@ -40,7 +40,8 @@ const AdminDashboard = () => {
   const checkRevocationStatuses = async () => {
     const statuses = {};
     try {
-      const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
+      const rpcUrl = await detectRpcEndpoint();
+      const connection = new Connection(rpcUrl, 'confirmed');
       for (const doc of documents) {
         try {
           const pda = getDocumentPda(doc.docHash);
@@ -122,7 +123,7 @@ const AdminDashboard = () => {
       }
 
       const ipfsCid = res.data.document.ipfsCid;
-      const provider = getProvider(wallet);
+      const provider = await getProvider(wallet);
       const program = new anchor.Program(idl, provider);
       const docHashBytes = Buffer.from(docHash, 'hex');
       const documentRecordPda = anchor.web3.PublicKey.findProgramAddressSync(
@@ -160,7 +161,7 @@ const AdminDashboard = () => {
     if (!wallet.connected) return toast.error("Please connect your wallet first");
     if (!window.confirm("Are you sure you want to revoke this document on the blockchain? This action is irreversible.")) return;
     try {
-      const provider = getProvider(wallet);
+      const provider = await getProvider(wallet);
       const program = new anchor.Program(idl, provider);
       const docHashBytes = Buffer.from(docHash, 'hex');
       const documentRecordPda = anchor.web3.PublicKey.findProgramAddressSync(
@@ -188,7 +189,7 @@ const AdminDashboard = () => {
   const handleMintApprovedRequest = async (req) => {
     if (!wallet.connected) return toast.error("Please connect your wallet first");
     try {
-      const provider = getProvider(wallet);
+      const provider = await getProvider(wallet);
       const program = new anchor.Program(idl, provider);
       const docHashBytes = Buffer.from(req.docHash, 'hex');
       const documentRecordPda = anchor.web3.PublicKey.findProgramAddressSync(
@@ -234,38 +235,50 @@ const AdminDashboard = () => {
   const chartData = generateChartData();
 
   return (
-    <div className="animate-fade-in">
+    <div className="page-container animate-fade-in">
       <div style={styles.header}>
-        <h1>Admin Dispatch Panel</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>Issue and manage certificates as {user?.username}.</p>
-        {!wallet.connected && <div style={styles.warningBanner}>Please connect your Solana wallet to issue or revoke documents.</div>}
+        <div>
+          <h1 style={{ marginBottom: '0.5rem' }}>
+            <span className="gradient-text">Admin</span> Dispatch Panel
+          </h1>
+          <p style={{ color: 'var(--text-secondary)' }}>Issue and manage certificates as {user?.username}.</p>
+        </div>
+        {!wallet.connected && (
+          <div style={styles.warningBanner}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              ⚠ Please connect your Solana wallet to issue or revoke documents.
+            </span>
+          </div>
+        )}
       </div>
+
       <div className="dashboard-grid">
-        {}
-        <div className="glass-panel" style={styles.uploadCard}>
-          <h3 style={{ marginBottom: '0.5rem' }}>Issue New Document</h3>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-            Select a file and assign it to a user. It will be stored on IPFS and registered on the Solana blockchain.
+        {/* Upload Card */}
+        <div className="card-glow" style={styles.uploadCard}>
+          <h3 style={{ marginBottom: '0.5rem' }}>
+            <span className="gradient-text-subtle">Issue New Document</span>
+          </h3>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.85rem', lineHeight: 1.6 }}>
+            Select a file and assign it to a user. Stored on IPFS and registered on Solana.
           </p>
           <form onSubmit={handleUpload}>
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={styles.label}>Recipient Email</label>
+            <div className="input-group">
+              <label>Recipient Email</label>
               <input 
                 type="email" 
                 required
                 value={recipientEmail}
                 onChange={e => setRecipientEmail(e.target.value)}
-                style={styles.input}
                 placeholder="user@example.com"
               />
             </div>
-            <div style={styles.dropZone}>
+            <div className="drop-zone" style={{ padding: '2rem' }}>
               <input 
                 type="file" 
                 onChange={e => setFile(e.target.files[0])} 
                 style={styles.fileInput}
               />
-              <div style={styles.dropZoneText}>
+              <div style={{ color: file ? 'var(--neon-cyan)' : 'var(--text-muted)', fontWeight: 500 }}>
                 {file ? file.name : "Click or drag file to upload"}
               </div>
             </div>
@@ -275,8 +288,9 @@ const AdminDashboard = () => {
                 id="multiSig" 
                 checked={requireMultiSig} 
                 onChange={(e) => setRequireMultiSig(e.target.checked)} 
+                style={{ width: 'auto', accentColor: 'var(--neon-cyan)' }}
               />
-              <label htmlFor="multiSig" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+              <label htmlFor="multiSig" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
                 Require Multi-Signature (Super Admin Approval)
               </label>
             </div>
@@ -291,43 +305,54 @@ const AdminDashboard = () => {
           </form>
         </div>
         
-        {}
+        {/* Bulk Upload */}
         <BulkUpload onComplete={fetchDocuments} />
         
-        {}
+        {/* Chart */}
         {chartData.length > 0 && (
-          <div className="glass-panel" style={{ marginTop: '2rem', padding: '2rem', gridColumn: '1 / -1' }}>
-            <h3 style={{ marginBottom: '1.5rem' }}>Certificates Issued Over Time</h3>
+          <div className="card-glow" style={{ marginTop: '2rem', padding: '2rem', gridColumn: '1 / -1' }}>
+            <h3 style={{ marginBottom: '1.5rem' }}>
+              <span className="gradient-text-subtle">Certificates Issued Over Time</span>
+            </h3>
             <div style={{ width: '100%', height: 300 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
-                  <XAxis dataKey="name" stroke="var(--text-secondary)" />
-                  <YAxis stroke="var(--text-secondary)" allowDecimals={false} />
+                  <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} />
+                  <YAxis stroke="var(--text-muted)" fontSize={12} allowDecimals={false} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#121216', border: '1px solid var(--border-color)', borderRadius: '8px' }} 
-                    itemStyle={{ color: 'var(--accent-primary)' }} 
+                    contentStyle={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)', borderRadius: '10px', fontFamily: 'Space Grotesk' }} 
+                    itemStyle={{ color: 'var(--neon-cyan)' }} 
                   />
-                  <Line type="monotone" dataKey="documents" stroke="var(--accent-primary)" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                  <Line type="monotone" dataKey="documents" stroke="url(#chartGradient)" strokeWidth={3} dot={{ r: 4, fill: 'var(--neon-cyan)' }} activeDot={{ r: 6, fill: 'var(--neon-violet)' }} />
+                  <defs>
+                    <linearGradient id="chartGradient" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="var(--neon-cyan)" />
+                      <stop offset="100%" stopColor="var(--neon-violet)" />
+                    </linearGradient>
+                  </defs>
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
         )}
         
-        {}
+        {/* Multi-Sig Requests */}
         {requests.length > 0 && (
           <div style={{ gridColumn: '1 / -1', marginBottom: '2rem' }}>
-            <h3 style={{ marginBottom: '1rem', color: 'var(--warning)' }}>Pending Multi-Sig Requests</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+              <h3>Pending Multi-Sig Requests</h3>
+              <span className="badge badge-amber">{requests.length}</span>
+            </div>
             <div style={styles.list}>
               {requests.map(req => (
-                <div key={req.id} className="glass-panel" style={{...styles.listItem, borderLeft: req.status === 'APPROVED' ? '4px solid var(--success)' : '4px solid var(--warning)'}}>
+                <div key={req.id} className="card-glow" style={{...styles.listItem, borderLeft: req.status === 'APPROVED' ? '3px solid var(--neon-green)' : '3px solid var(--neon-amber)'}}>
                   <div>
-                    <h4 style={{ color: 'var(--accent-secondary)' }}>{req.name}</h4>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginTop: '4px' }}>
+                    <h4 style={{ color: 'var(--neon-cyan)' }}>{req.name}</h4>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
                       Owner: {req.ownerEmail}
                     </span>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginTop: '4px' }}>
-                      Status: <strong style={{ color: req.status === 'APPROVED' ? 'var(--success)' : req.status === 'REJECTED' ? 'var(--error)' : 'var(--warning)' }}>{req.status}</strong>
+                    <span style={{ fontSize: '0.8rem', display: 'block', marginTop: '4px' }}>
+                      Status: <span className={`badge badge-${req.status === 'APPROVED' ? 'green' : req.status === 'REJECTED' ? 'red' : 'amber'}`}>{req.status}</span>
                     </span>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -335,7 +360,7 @@ const AdminDashboard = () => {
                       <button 
                         onClick={() => handleMintApprovedRequest(req)}
                         className="btn-primary" 
-                        style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                        style={{ padding: '8px 16px', fontSize: '0.8rem' }}
                       >
                         Mint to Blockchain
                       </button>
@@ -347,85 +372,86 @@ const AdminDashboard = () => {
           </div>
         )}
 
+        {/* Documents List */}
         <div style={{ gridColumn: '1 / -1' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 style={{ margin: 0 }}>Certificates Issued by Me</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <h3>Certificates Issued by Me</h3>
+              <span className="badge badge-cyan">{visibleDocs.length}</span>
+            </div>
           </div>
           {loadingDocs ? (
             <div style={styles.list}>
               {[1, 2, 3].map(i => (
-                <div key={i} className="glass-panel skeleton" style={{ height: '80px' }}></div>
+                <div key={i} className="glass-panel skeleton" style={{ height: '100px' }}></div>
               ))}
             </div>
           ) : documents.length === 0 ? (
-            <div className="glass-panel" style={{ textAlign: 'center', padding: '2rem' }}>
+            <div className="glass-panel" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
               <p style={{ color: 'var(--text-secondary)' }}>You haven't issued any certificates yet.</p>
             </div>
           ) : visibleDocs.length === 0 ? (
-            <div className="glass-panel" style={{ textAlign: 'center', padding: '2rem' }}>
+            <div className="glass-panel" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
               <p style={{ color: 'var(--text-secondary)' }}>All issued certificates are revoked.</p>
             </div>
           ) : (
             <div style={styles.list}>
               {visibleDocs.map(doc => (
-                <div key={doc.id} className="glass-panel" style={styles.listItem}>
-                  <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                    <div style={{ background: '#fff', padding: '0.5rem', borderRadius: '8px' }}>
+                <div key={doc.id} className="card-glow" style={styles.listItem}>
+                  <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flex: 1, flexWrap: 'wrap' }}>
+                    <div style={styles.qrSmall}>
                       <QRCodeSVG 
                         value={`${window.location.origin}/verify?hash=${doc.docHash}`} 
-                        size={80} 
+                        size={72} 
                         bgColor={"#ffffff"}
                         fgColor={"#000000"}
                       />
                     </div>
-                    <div>
-                      <h4 style={{ color: 'var(--accent-secondary)' }}>{doc.name}</h4>
-                    <div style={styles.hash}>
-                      Hash: {abstractHash(doc.docHash)}
-                      <button onClick={() => copyToClipboard(doc.docHash, 'Hash')} style={{ background: 'transparent', color: copied === doc.docHash ? 'var(--success)' : 'inherit' }}>
-                        {copied === doc.docHash ? <Check size={14} /> : <Copy size={14} />}
-                      </button>
-                    </div>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '4px' }}>
-                      IPFS: {abstractHash(doc.ipfsCid, 4, 4)}
-                      <button onClick={() => copyToClipboard(doc.ipfsCid, 'IPFS CID')} style={{ background: 'transparent', color: copied === doc.ipfsCid ? 'var(--success)' : 'inherit' }}>
-                        {copied === doc.ipfsCid ? <Check size={14} /> : <Copy size={14} />}
-                      </button>
-                    </span>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginTop: '4px' }}>
-                      Owner: {doc.ownerEmail}
-                    </span>
-                    {revokedDocs[doc.docHash] && (
-                      <span style={{ display: 'inline-block', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.2)', color: 'var(--error)', marginTop: '4px', fontWeight: 'bold' }}>
-                        REVOKED ON BLOCKCHAIN
-                      </span>
-                    )}
-                    {(doc.aiDocType || doc.aiKeywords) && (
-                      <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(168, 85, 247, 0.2)', color: 'var(--accent-secondary)' }}>
-                          {doc.aiDocType || 'General'}
+                    <div style={{ flex: 1, minWidth: '200px' }}>
+                      <h4 style={{ color: 'var(--neon-cyan)' }}>{doc.name}</h4>
+                      <div style={styles.hash}>
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                          {abstractHash(doc.docHash)}
                         </span>
-                        {doc.aiKeywords && doc.aiKeywords !== '[]' && JSON.parse(doc.aiKeywords).map((kw, i) => (
-                          <span key={i} style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.1)', color: 'var(--text-secondary)' }}>
-                            {kw}
-                          </span>
-                        ))}
+                        <button onClick={() => copyToClipboard(doc.docHash, 'Hash')} style={{ background: 'transparent', color: copied === doc.docHash ? 'var(--neon-green)' : 'var(--text-muted)', display: 'flex', padding: '2px' }}>
+                          {copied === doc.docHash ? <Check size={12} /> : <Copy size={12} />}
+                        </button>
                       </div>
-                    )}
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                        IPFS: {abstractHash(doc.ipfsCid, 4, 4)}
+                        <button onClick={() => copyToClipboard(doc.ipfsCid, 'IPFS CID')} style={{ background: 'transparent', color: copied === doc.ipfsCid ? 'var(--neon-green)' : 'var(--text-muted)', display: 'flex', padding: '2px' }}>
+                          {copied === doc.ipfsCid ? <Check size={12} /> : <Copy size={12} />}
+                        </button>
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
+                        Owner: {doc.ownerEmail}
+                      </span>
+                      {revokedDocs[doc.docHash] && (
+                        <span className="badge badge-red" style={{ marginTop: '4px' }}>REVOKED ON BLOCKCHAIN</span>
+                      )}
+                      {(doc.aiDocType || doc.aiKeywords) && (
+                        <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                          <span className="badge badge-violet">{doc.aiDocType || 'General'}</span>
+                          {doc.aiKeywords && doc.aiKeywords !== '[]' && JSON.parse(doc.aiKeywords).map((kw, i) => (
+                            <span key={i} className="badge" style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>
+                              {kw}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    <a href={`https://gateway.pinata.cloud/ipfs/${doc.ipfsCid}`} target="_blank" rel="noreferrer" className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0 }}>
+                    <a href={`https://gateway.pinata.cloud/ipfs/${doc.ipfsCid}`} target="_blank" rel="noreferrer" className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       IPFS <ExternalLink size={14} />
                     </a>
-
                     {revokedDocs[doc.docHash] ? (
-                      <span style={{ fontSize: '0.8rem', color: 'var(--error)', padding: '6px 12px' }}>Revoked</span>
+                      <span className="badge badge-red" style={{ padding: '6px 10px' }}>Revoked</span>
                     ) : (
                       <button 
-                        className="btn-outline" 
+                        className="btn-danger" 
                         onClick={() => handleRevoke(doc.docHash)} 
-                        style={{ padding: '6px 12px', fontSize: '0.8rem', borderColor: 'var(--error)', color: 'var(--error)' }}
+                        style={{ padding: '6px 12px', fontSize: '0.8rem' }}
                       >
                         Revoke
                       </button>
@@ -440,47 +466,23 @@ const AdminDashboard = () => {
     </div>
   );
 };
+
 const styles = {
   header: {
     marginBottom: '2rem'
   },
   warningBanner: {
-    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-    color: 'var(--warning)',
+    backgroundColor: 'rgba(245, 158, 11, 0.08)',
+    color: 'var(--neon-amber)',
     padding: '1rem',
-    borderRadius: '8px',
+    borderRadius: 'var(--radius-md)',
     marginTop: '1rem',
-    border: '1px solid rgba(245, 158, 11, 0.2)'
+    border: '1px solid rgba(245, 158, 11, 0.15)',
+    fontSize: '0.9rem'
   },
   uploadCard: {
-    padding: '2.5rem',
+    padding: '2rem',
     height: 'fit-content',
-  },
-  label: {
-    display: 'block',
-    fontSize: '0.9rem',
-    color: 'var(--text-secondary)',
-    marginBottom: '0.5rem'
-  },
-  input: {
-    width: '100%',
-    padding: '0.75rem',
-    borderRadius: '8px',
-    border: '1px solid var(--border-color)',
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    color: 'white',
-    outline: 'none',
-    transition: 'border-color 0.2s',
-  },
-  dropZone: {
-    border: '2px dashed var(--border-color)',
-    borderRadius: '12px',
-    padding: '2.5rem',
-    textAlign: 'center',
-    position: 'relative',
-    cursor: 'pointer',
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    transition: 'border-color 0.2s',
   },
   fileInput: {
     opacity: 0,
@@ -488,9 +490,10 @@ const styles = {
     top: 0, left: 0, width: '100%', height: '100%',
     cursor: 'pointer'
   },
-  dropZoneText: {
-    color: 'var(--text-secondary)',
-    fontWeight: '500'
+  qrSmall: {
+    background: '#fff',
+    padding: '6px',
+    borderRadius: '8px'
   },
   list: {
     display: 'flex',
@@ -501,7 +504,16 @@ const styles = {
     padding: '1.25rem',
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
+    gap: '1rem',
+    flexWrap: 'wrap'
+  },
+  hash: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    color: 'var(--text-muted)',
   }
 };
+
 export default AdminDashboard;

@@ -1,49 +1,57 @@
 import React from 'react';
 
-const Loader = () => {
-  return (
-    <div style={styles.container}>
-      <img src="/logo.png" alt="Decrypting..." className="technical-logo" />
-      <p style={styles.text}>Decrypting Data...</p>
-      <style>{`
-        .technical-logo {
-          width: 80px;
-          height: 80px;
-          object-fit: contain;
-          animation: pulseAndGlow 2s ease-in-out infinite alternate;
-          filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.5));
-        }
-        @keyframes pulseAndGlow {
-          0% {
-            transform: scale(0.95);
-            filter: drop-shadow(0 0 5px rgba(168, 85, 247, 0.3));
-          }
-          100% {
-            transform: scale(1.05);
-            filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.8));
-          }
-        }
-      `}</style>
+const Loader = () => (
+  <div style={styles.container}>
+    <div style={styles.spinner}>
+      <div style={styles.ring} />
+      <div style={styles.dot} />
     </div>
-  );
-};
+    <style>{`
+      @keyframes loaderSpin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      @keyframes loaderPulse {
+        0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        50% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.8); }
+      }
+    `}</style>
+  </div>
+);
 
 const styles = {
   container: {
     display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
     justifyContent: 'center',
-    height: '60vh',
-    width: '100%',
+    alignItems: 'center',
+    minHeight: '60vh',
   },
-  text: {
-    marginTop: '1.5rem',
-    color: 'var(--text-secondary)',
-    letterSpacing: '2px',
-    fontSize: '0.9rem',
-    fontWeight: '500',
-    animation: 'pulse 2s infinite',
+  spinner: {
+    width: '48px',
+    height: '48px',
+    position: 'relative',
+  },
+  ring: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '50%',
+    border: '2px solid transparent',
+    borderTopColor: 'var(--neon-cyan)',
+    borderRightColor: 'rgba(0, 240, 255, 0.3)',
+    animation: 'loaderSpin 1s linear infinite',
+    boxShadow: '0 0 15px rgba(0, 240, 255, 0.15)',
+  },
+  dot: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+    background: 'var(--neon-cyan)',
+    transform: 'translate(-50%, -50%)',
+    animation: 'loaderPulse 1s ease-in-out infinite',
+    boxShadow: '0 0 10px var(--neon-cyan)',
   }
 };
 

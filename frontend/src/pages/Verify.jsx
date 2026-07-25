@@ -5,7 +5,7 @@ import { calculateSHA256 } from '../utils/hash';
 import { abstractHash } from '../utils/mask';
 import { getDocumentPda, SOLANA_RPC_ENDPOINT } from '../utils/solana';
 import toast from 'react-hot-toast';
-import { Copy, Check, ShieldCheck, EyeOff } from 'lucide-react';
+import { Copy, Check, ShieldCheck, EyeOff, Upload, FileSearch, Loader2, AlertTriangle, XCircle, CheckCircle2 } from 'lucide-react';
 import { verifySelectiveDisclosure } from '../utils/zkProof';
 
 const Verify = () => {
@@ -13,6 +13,7 @@ const Verify = () => {
   const [verifying, setVerifying] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -126,6 +127,7 @@ const Verify = () => {
     toast.success('Hash copied to clipboard!', { id: 'copy' });
     setTimeout(() => setCopied(null), 2000);
   };
+
   const handleVerify = async (e) => {
     e.preventDefault();
     if (!file) return;
@@ -155,103 +157,287 @@ const Verify = () => {
       setVerifying(false);
     }
   };
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setFile(e.dataTransfer.files[0]);
+      setResult(null);
+    }
+  };
+
+  const getStatusConfig = (status) => {
+    switch(status) {
+      case 'AUTHENTIC': return {
+        icon: <CheckCircle2 size={24} />,
+        color: 'var(--neon-green)',
+        bg: 'rgba(16, 185, 129, 0.08)',
+        border: 'rgba(16, 185, 129, 0.2)',
+        glow: '0 0 30px rgba(16, 185, 129, 0.1)'
+      };
+      case 'FAKE': return {
+        icon: <XCircle size={24} />,
+        color: 'var(--neon-red)',
+        bg: 'rgba(239, 68, 68, 0.08)',
+        border: 'rgba(239, 68, 68, 0.2)',
+        glow: '0 0 30px rgba(239, 68, 68, 0.1)'
+      };
+      case 'REVOKED': return {
+        icon: <AlertTriangle size={24} />,
+        color: 'var(--neon-amber)',
+        bg: 'rgba(245, 158, 11, 0.08)',
+        border: 'rgba(245, 158, 11, 0.2)',
+        glow: '0 0 30px rgba(245, 158, 11, 0.1)'
+      };
+      default: return {
+        icon: <AlertTriangle size={24} />,
+        color: 'var(--text-secondary)',
+        bg: 'rgba(255, 255, 255, 0.04)',
+        border: 'rgba(255, 255, 255, 0.1)',
+        glow: 'none'
+      };
+    }
+  };
+
   return (
-    <div className="animate-fade-in" style={styles.container}>
-      <div className="glass-panel" style={styles.card}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 className="gradient-text">Zero-Knowledge Verification</h1>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-            Check authenticity directly against the Solana Ledger. The file never leaves your browser.
+    <div style={styles.page}>
+      <div style={styles.container} className="animate-fade-in">
+        {/* Header */}
+        <div style={styles.header}>
+          <div style={styles.iconCircle}>
+            <FileSearch size={28} color="var(--neon-cyan)" />
+          </div>
+          <h1 style={styles.title}>
+            <span className="gradient-text">Zero-Knowledge</span> Verification
+          </h1>
+          <p style={styles.subtitle}>
+            Verify document authenticity against the Solana blockchain. 
+            Your file is hashed client-side — it never leaves your browser.
           </p>
         </div>
-        <form onSubmit={handleVerify}>
-          <div style={styles.dropZone}>
-            <input 
-              type="file" 
-              onChange={e => { setFile(e.target.files[0]); setResult(null); }} 
-              style={styles.fileInput}
-            />
-            <div style={styles.dropZoneText}>
-              {file ? file.name : "Drop document here to verify"}
-            </div>
-          </div>
-          <button 
-            type="submit" 
-            className="btn-primary" 
-            style={{ width: '100%', marginTop: '1.5rem' }}
-            disabled={verifying || !file}
-          >
-            {verifying ? 'Running Cryptographic Verification...' : 'Verify Document'}
-          </button>
-        </form>
-        {result && (
-          <div style={{...styles.resultBox, ...(
-            result.status === 'AUTHENTIC' ? styles.authentic : 
-            result.status === 'FAKE' ? styles.fake : 
-            result.status === 'REVOKED' ? styles.revoked : styles.error
-          )}}>
-            <h3 style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <ShieldCheck size={20} /> Status: {result.status}
-            </h3>
-            <p style={{ marginBottom: '1rem' }}>{result.message}</p>
-            
-            {result.isZk && (
-              <div style={{ backgroundColor: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', marginTop: '1rem', border: '1px solid var(--border-color)' }}>
-                <h4 style={{ marginBottom: '0.75rem', color: '#fff', fontSize: '0.9rem' }}>Disclosed Claims (Selective Disclosure)</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {Object.keys(result.disclosedFields).map(k => (
-                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                      <span style={{ textTransform: 'capitalize', color: 'var(--text-secondary)' }}>{k.replace('ai', 'AI ')}:</span>
-                      <span style={{ color: '#fff', fontWeight: '500' }}>{result.disclosedFields[k]}</span>
-                    </div>
-                  ))}
-                  {Object.keys(result.hiddenFieldHashes).map(k => (
-                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', opacity: 0.7 }}>
-                      <span style={{ textTransform: 'capitalize', color: 'var(--text-secondary)' }}>{k.replace('ai', 'AI ')}:</span>
-                      <span style={{ color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <EyeOff size={12} /> Cryptographically Hidden
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
-            {result.hash && (
-              <div style={{ marginTop: '1rem', fontSize: '0.8rem', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '0.5rem', wordBreak: 'break-all' }}>
-                <span>Root SHA-256: {abstractHash(result.hash, 8, 8)}</span>
-                <button onClick={() => copyToClipboard(result.hash)} style={{ background: 'transparent', color: copied === result.hash ? 'var(--success)' : 'inherit' }}>
-                  {copied === result.hash ? <Check size={14} /> : <Copy size={14} />}
-                </button>
+        {/* Upload Card */}
+        <div className="card-glow" style={styles.card}>
+          <form onSubmit={handleVerify}>
+            <div 
+              style={{
+                ...styles.dropZone,
+                ...(dragActive ? styles.dropZoneActive : {}),
+                ...(file ? styles.dropZoneHasFile : {})
+              }}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
+              <input 
+                type="file" 
+                onChange={e => { setFile(e.target.files[0]); setResult(null); }} 
+                style={styles.fileInput}
+              />
+              <div style={styles.dropContent}>
+                {file ? (
+                  <>
+                    <div style={styles.fileIcon}>
+                      <ShieldCheck size={28} color="var(--neon-cyan)" />
+                    </div>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '1rem' }}>
+                      {file.name}
+                    </span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                      {(file.size / 1024).toFixed(1)} KB • Click to change
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <div style={styles.uploadIcon}>
+                      <Upload size={32} color="var(--text-muted)" />
+                    </div>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
+                      Drop your document here
+                    </span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                      or click to browse • Any file type supported
+                    </span>
+                  </>
+                )}
               </div>
-            )}
-          </div>
-        )}
+            </div>
+
+            <button 
+              type="submit" 
+              className="btn-primary" 
+              style={styles.verifyBtn}
+              disabled={verifying || !file}
+            >
+              {verifying ? (
+                <>
+                  <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                  Running Cryptographic Verification...
+                </>
+              ) : (
+                <>
+                  <ShieldCheck size={18} />
+                  Verify Document
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Result */}
+          {result && (() => {
+            const cfg = getStatusConfig(result.status);
+            return (
+              <div style={{
+                ...styles.resultBox,
+                background: cfg.bg,
+                borderColor: cfg.border,
+                boxShadow: cfg.glow
+              }} className="animate-scale-in">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <span style={{ color: cfg.color }}>{cfg.icon}</span>
+                  <h3 style={{ fontSize: '1.1rem', color: cfg.color, fontWeight: 700 }}>
+                    {result.status}
+                  </h3>
+                </div>
+                <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>{result.message}</p>
+                
+                {/* ZK Disclosed Claims */}
+                {result.isZk && (
+                  <div style={styles.zkBox}>
+                    <h4 style={{ marginBottom: '0.75rem', color: 'var(--text-primary)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      Selective Disclosure Claims
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {Object.keys(result.disclosedFields).map(k => (
+                        <div key={k} style={styles.zkRow}>
+                          <span style={{ textTransform: 'capitalize', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                            {k.replace('ai', 'AI ')}
+                          </span>
+                          <span style={{ color: 'var(--text-primary)', fontWeight: 500, fontSize: '0.85rem' }}>
+                            {result.disclosedFields[k]}
+                          </span>
+                        </div>
+                      ))}
+                      {Object.keys(result.hiddenFieldHashes).map(k => (
+                        <div key={k} style={styles.zkRow}>
+                          <span style={{ textTransform: 'capitalize', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                            {k.replace('ai', 'AI ')}
+                          </span>
+                          <span style={{ color: 'var(--neon-amber)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem' }}>
+                            <EyeOff size={12} /> Hidden
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Hash */}
+                {result.hash && (
+                  <div style={styles.hashRow}>
+                    <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', opacity: 0.7 }}>
+                      SHA-256: {abstractHash(result.hash, 8, 8)}
+                    </span>
+                    <button 
+                      onClick={() => copyToClipboard(result.hash)} 
+                      style={{ background: 'transparent', color: copied === result.hash ? 'var(--neon-green)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', padding: '4px' }}
+                    >
+                      {copied === result.hash ? <Check size={14} /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </div>
       </div>
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };
+
 const styles = {
-  container: {
+  page: {
+    minHeight: 'calc(100vh - 72px)',
     display: 'flex',
-    justifyContent: 'center',
     alignItems: 'center',
-    minHeight: '80vh',
+    justifyContent: 'center',
+    padding: '2rem',
+  },
+  container: {
+    width: '100%',
+    maxWidth: '620px',
+  },
+  header: {
+    textAlign: 'center',
+    marginBottom: '2.5rem',
+  },
+  iconCircle: {
+    width: '64px',
+    height: '64px',
+    borderRadius: '20px',
+    background: 'rgba(0, 240, 255, 0.08)',
+    border: '1px solid rgba(0, 240, 255, 0.15)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: '0 auto 1.5rem',
+    boxShadow: '0 0 30px rgba(0, 240, 255, 0.08)'
+  },
+  title: {
+    fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+    marginBottom: '0.75rem',
+    fontWeight: 800,
+    letterSpacing: '-0.03em'
+  },
+  subtitle: {
+    color: 'var(--text-secondary)',
+    maxWidth: '500px',
+    margin: '0 auto',
+    fontSize: '0.95rem',
+    lineHeight: 1.7
   },
   card: {
-    padding: '3rem',
-    width: '100%',
-    maxWidth: '600px',
+    padding: '2rem',
   },
   dropZone: {
-    border: '2px dashed var(--accent-secondary)',
-    borderRadius: '12px',
-    padding: '3rem',
+    border: '2px dashed var(--border-default)',
+    borderRadius: 'var(--radius-lg)',
+    padding: '3rem 2rem',
     textAlign: 'center',
     position: 'relative',
     cursor: 'pointer',
-    backgroundColor: 'rgba(168, 85, 247, 0.05)',
-    transition: 'all 0.2s',
+    background: 'rgba(0, 0, 0, 0.15)',
+    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+  },
+  dropZoneActive: {
+    borderColor: 'var(--neon-cyan)',
+    background: 'rgba(0, 240, 255, 0.03)',
+    boxShadow: 'inset 0 0 40px rgba(0, 240, 255, 0.03), 0 0 20px rgba(0, 240, 255, 0.05)'
+  },
+  dropZoneHasFile: {
+    borderColor: 'rgba(0, 240, 255, 0.3)',
+    borderStyle: 'solid',
+    background: 'rgba(0, 240, 255, 0.02)'
   },
   fileInput: {
     opacity: 0,
@@ -259,36 +445,70 @@ const styles = {
     top: 0, left: 0, width: '100%', height: '100%',
     cursor: 'pointer'
   },
-  dropZoneText: {
-    color: 'var(--text-primary)',
-    fontWeight: '500',
-    fontSize: '1.1rem'
+  dropContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '0.75rem',
+  },
+  uploadIcon: {
+    width: '64px',
+    height: '64px',
+    borderRadius: '50%',
+    background: 'rgba(255, 255, 255, 0.03)',
+    border: '1px solid var(--border-subtle)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: '0.5rem'
+  },
+  fileIcon: {
+    width: '56px',
+    height: '56px',
+    borderRadius: '16px',
+    background: 'rgba(0, 240, 255, 0.08)',
+    border: '1px solid rgba(0, 240, 255, 0.15)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: '0.25rem'
+  },
+  verifyBtn: {
+    width: '100%',
+    marginTop: '1.5rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '14px',
+    fontSize: '1rem'
   },
   resultBox: {
     marginTop: '2rem',
     padding: '1.5rem',
-    borderRadius: '12px',
+    borderRadius: 'var(--radius-lg)',
     border: '1px solid',
   },
-  authentic: {
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    borderColor: 'var(--success)',
-    color: 'var(--success)'
+  zkBox: {
+    marginTop: '1rem',
+    padding: '1rem',
+    borderRadius: 'var(--radius-md)',
+    background: 'rgba(0, 0, 0, 0.2)',
+    border: '1px solid var(--border-subtle)'
   },
-  fake: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderColor: 'var(--error)',
-    color: 'var(--error)'
+  zkRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    padding: '6px 0',
+    borderBottom: '1px solid var(--border-subtle)'
   },
-  revoked: {
-    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-    borderColor: 'var(--warning)',
-    color: 'var(--warning)'
-  },
-  error: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderColor: 'var(--text-secondary)',
-    color: 'var(--text-primary)'
+  hashRow: {
+    marginTop: '1rem',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    justifyContent: 'space-between'
   }
 };
+
 export default Verify;

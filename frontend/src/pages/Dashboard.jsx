@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '@solana/wallet-adapter-react';
 import toast from 'react-hot-toast';
-import { Copy, ExternalLink, Check, QrCode, ShieldCheck, Award } from 'lucide-react';
+import { Copy, ExternalLink, Check, ShieldCheck, Award, FileText, Download } from 'lucide-react';
 import { abstractHash } from '../utils/mask';
 import { QRCodeSVG } from 'qrcode.react';
 import CertificateCanvas from '../components/CertificateCanvas';
@@ -88,6 +88,7 @@ const Dashboard = () => {
       toast.error("Signature failed or rejected");
     }
   };
+
   const downloadMyIDCard = (name, designation, email, userId) => {
     const canvas = document.createElement('canvas');
     canvas.width = 400;
@@ -95,51 +96,51 @@ const Dashboard = () => {
     const ctx = canvas.getContext('2d');
 
     const grad = ctx.createLinearGradient(0, 0, 0, 600);
-    grad.addColorStop(0, '#0a0a0c');
-    grad.addColorStop(0.5, '#121216');
-    grad.addColorStop(1, '#1e1233');
+    grad.addColorStop(0, '#030304');
+    grad.addColorStop(0.5, '#0c0c10');
+    grad.addColorStop(1, '#111118');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 400, 600);
 
-    ctx.fillStyle = 'rgba(99, 102, 241, 0.1)';
+    ctx.fillStyle = 'rgba(0, 240, 255, 0.05)';
     ctx.beginPath();
     ctx.arc(0, 0, 200, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = 'rgba(168, 85, 247, 0.1)';
+    ctx.fillStyle = 'rgba(139, 92, 246, 0.05)';
     ctx.beginPath();
     ctx.arc(400, 600, 250, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#F0F0F5';
     ctx.font = 'bold 24px Outfit, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('MetaBlock', 200, 60);
+    ctx.fillText('ProofChain', 200, 60);
 
-    ctx.fillStyle = '#a855f7';
-    ctx.font = 'bold 11px Inter, sans-serif';
-    ctx.fillText('A WEB 3.0 COMPANY', 200, 80);
+    ctx.fillStyle = '#00F0FF';
+    ctx.font = 'bold 11px Space Grotesk, sans-serif';
+    ctx.fillText('BLOCKCHAIN VERIFIED', 200, 80);
 
-    ctx.fillStyle = '#a1a1aa';
-    ctx.font = '10px Inter, sans-serif';
-    ctx.fillText('CIN: ABC1182', 200, 95);
+    ctx.fillStyle = '#71717A';
+    ctx.font = '10px Space Grotesk, sans-serif';
+    ctx.fillText('Document Verification Platform', 200, 95);
 
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
     ctx.beginPath();
     ctx.moveTo(40, 110);
     ctx.lineTo(360, 110);
     ctx.stroke();
 
-    ctx.fillStyle = '#6366f1';
+    ctx.fillStyle = '#00F0FF';
     ctx.font = 'bold 18px Outfit, sans-serif';
     ctx.fillText(name.toUpperCase(), 200, 160);
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'italic 14px Inter, sans-serif';
+    ctx.fillStyle = '#F0F0F5';
+    ctx.font = 'italic 14px Space Grotesk, sans-serif';
     ctx.fillText(designation, 200, 190);
 
-    ctx.fillStyle = '#a1a1aa';
-    ctx.font = '12px Inter, sans-serif';
+    ctx.fillStyle = '#71717A';
+    ctx.font = '12px Space Grotesk, sans-serif';
     ctx.fillText(email, 200, 215);
 
     const svgElement = document.getElementById("myAttendanceQR");
@@ -164,166 +165,202 @@ const Dashboard = () => {
       ctx.drawImage(qrImg, 140, 260, 120, 120);
       URL.revokeObjectURL(url);
 
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
       ctx.beginPath();
       ctx.moveTo(40, 450);
       ctx.lineTo(360, 450);
       ctx.stroke();
 
-      ctx.fillStyle = '#a1a1aa';
-      ctx.font = '9px Inter, sans-serif';
-      ctx.fillText('36/12, Kriran Path, Mansarovar, Jaipur, RJ', 200, 480);
-      ctx.fillText('Phone: +91-78777 00648 | Website: www.metablocktech.com', 200, 500);
+      ctx.fillStyle = '#71717A';
+      ctx.font = '9px Space Grotesk, sans-serif';
+      ctx.fillText('Blockchain Document Verification', 200, 480);
+      ctx.fillText('Powered by Solana & IPFS', 200, 500);
 
-      ctx.fillStyle = '#6366f1';
-      ctx.font = 'bold 10px Inter, sans-serif';
+      ctx.fillStyle = '#00F0FF';
+      ctx.font = 'bold 10px Space Grotesk, sans-serif';
       ctx.fillText('EMPLOYEE ATTENDANCE CARD', 200, 540);
 
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.href = dataUrl;
-      link.download = `${name.replace(/\s+/g, '_')}_MetaBlock_ID.png`;
+      link.download = `${name.replace(/\s+/g, '_')}_ProofChain_ID.png`;
       link.click();
     };
     qrImg.src = url;
   };
+
   const visibleDocs = documents.filter(doc => !revokedDocs[doc.docHash]);
 
   return (
-    <div className="animate-fade-in">
+    <div className="page-container animate-fade-in">
+      {/* Header */}
       <div style={styles.header}>
-        <h1>Welcome, {user?.username}</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>View and verify your issued certificates.</p>
-      </div>
-
-      <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '2rem' }}>
-        <div style={{ background: '#fff', padding: '0.5rem', borderRadius: '8px', display: 'inline-block' }}>
-          <QRCodeSVG value={user?.id || 'N/A'} size={110} id="myAttendanceQR" />
-        </div>
         <div>
-          <h3 style={{ color: 'var(--accent-secondary)' }}>My Personal Attendance QR Code</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.25rem', maxWidth: '500px', marginBottom: '1rem' }}>
-            Show this QR code to the scanner on the login page to automatically record your entry/attendance.
-          </p>
-          <button 
-            onClick={() => downloadMyIDCard(user?.username, user?.designation || 'Developer', user?.email, user?.id)} 
-            className="btn-primary" 
-            style={{ padding: '8px 16px', fontSize: '0.85rem' }}
-          >
-            Download Employee ID Card
-          </button>
+          <h1 style={{ marginBottom: '0.5rem' }}>
+            Welcome, <span className="gradient-text">{user?.username}</span>
+          </h1>
+          <p style={{ color: 'var(--text-secondary)' }}>View and verify your issued certificates.</p>
         </div>
       </div>
 
-      <div className="dashboard-full-grid">
-        <div style={{ width: '100%' }}>
-          <h3 style={{ marginBottom: '1rem' }}>My Certificates</h3>
-          {loadingDocs ? (
-            <div style={styles.list}>
-              {[1, 2, 3].map(i => (
-                <div key={i} className="glass-panel skeleton" style={{ height: '80px' }}></div>
-              ))}
-            </div>
-          ) : documents.length === 0 ? (
-            <div className="glass-panel" style={{ textAlign: 'center', padding: '3rem' }}>
-              <p style={{ color: 'var(--text-secondary)' }}>You don't have any certificates issued to you yet.</p>
-            </div>
-          ) : visibleDocs.length === 0 ? (
-            <div className="glass-panel" style={{ textAlign: 'center', padding: '3rem' }}>
-              <p style={{ color: 'var(--text-secondary)' }}>All issued certificates have been revoked.</p>
-            </div>
-          ) : (
-            <div style={styles.list}>
-              {visibleDocs.map(doc => (
-                <React.Fragment key={doc.id}>
-                <div className="glass-panel" style={styles.listItem}>
-                  <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                    <div style={{ background: '#fff', padding: '0.5rem', borderRadius: '8px' }}>
-                      <QRCodeSVG 
-                        value={`${window.location.origin}/verify?hash=${doc.docHash}`} 
-                        size={80} 
-                        bgColor={"#ffffff"}
-                        fgColor={"#000000"}
-                      />
-                    </div>
-                    <div>
-                      <h4 style={{ color: 'var(--accent-secondary)' }}>{doc.name}</h4>
+      {/* QR Card */}
+      <div className="card-glow" style={styles.qrCard}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
+          <div style={styles.qrWrapper}>
+            <QRCodeSVG value={user?.id || 'N/A'} size={110} id="myAttendanceQR" bgColor="#ffffff" fgColor="#000000" />
+          </div>
+          <div style={{ flex: 1, minWidth: '250px' }}>
+            <h3 style={{ marginBottom: '0.25rem' }}>
+              <span className="gradient-text-subtle">Personal Attendance QR</span>
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem', lineHeight: 1.6 }}>
+              Show this QR code to the scanner to automatically record your attendance.
+            </p>
+            <button 
+              onClick={() => downloadMyIDCard(user?.username, user?.designation || 'Developer', user?.email, user?.id)} 
+              className="btn-primary" 
+              style={{ padding: '10px 20px', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Download size={14} />
+              Download ID Card
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Certificates */}
+      <div style={{ marginTop: '2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+          <FileText size={20} color="var(--neon-cyan)" />
+          <h3>My Certificates</h3>
+          <span className="badge badge-cyan">{visibleDocs.length}</span>
+        </div>
+
+        {loadingDocs ? (
+          <div style={styles.list}>
+            {[1, 2, 3].map(i => (
+              <div key={i} className="glass-panel skeleton" style={{ height: '100px' }}></div>
+            ))}
+          </div>
+        ) : documents.length === 0 ? (
+          <div className="glass-panel" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+            <FileText size={40} color="var(--text-muted)" style={{ marginBottom: '1rem' }} />
+            <p style={{ color: 'var(--text-secondary)' }}>You don't have any certificates issued to you yet.</p>
+          </div>
+        ) : visibleDocs.length === 0 ? (
+          <div className="glass-panel" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+            <p style={{ color: 'var(--text-secondary)' }}>All issued certificates have been revoked.</p>
+          </div>
+        ) : (
+          <div style={styles.list}>
+            {visibleDocs.map(doc => (
+              <React.Fragment key={doc.id}>
+              <div className="card-glow" style={styles.listItem}>
+                <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flex: 1, flexWrap: 'wrap' }}>
+                  <div style={styles.qrSmall}>
+                    <QRCodeSVG 
+                      value={`${window.location.origin}/verify?hash=${doc.docHash}`} 
+                      size={72} 
+                      bgColor={"#ffffff"}
+                      fgColor={"#000000"}
+                    />
+                  </div>
+                  <div style={{ flex: 1, minWidth: '200px' }}>
+                    <h4 style={{ color: 'var(--neon-cyan)', marginBottom: '0.25rem' }}>{doc.name}</h4>
                     <div style={styles.hash}>
-                      Hash: {abstractHash(doc.docHash)}
-                      <button onClick={() => copyToClipboard(doc.docHash, 'Hash')} style={{ background: 'transparent', color: copied === doc.docHash ? 'var(--success)' : 'inherit' }}>
-                        {copied === doc.docHash ? <Check size={14} /> : <Copy size={14} />}
+                      <span style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                        {abstractHash(doc.docHash)}
+                      </span>
+                      <button onClick={() => copyToClipboard(doc.docHash, 'Hash')} style={{ background: 'transparent', color: copied === doc.docHash ? 'var(--neon-green)' : 'var(--text-muted)', display: 'flex', padding: '2px' }}>
+                        {copied === doc.docHash ? <Check size={12} /> : <Copy size={12} />}
                       </button>
                     </div>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '4px' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
                       IPFS: {abstractHash(doc.ipfsCid, 4, 4)}
-                      <button onClick={() => copyToClipboard(doc.ipfsCid, 'IPFS CID')} style={{ background: 'transparent', color: copied === doc.ipfsCid ? 'var(--success)' : 'inherit' }}>
-                        {copied === doc.ipfsCid ? <Check size={14} /> : <Copy size={14} />}
+                      <button onClick={() => copyToClipboard(doc.ipfsCid, 'IPFS CID')} style={{ background: 'transparent', color: copied === doc.ipfsCid ? 'var(--neon-green)' : 'var(--text-muted)', display: 'flex', padding: '2px' }}>
+                        {copied === doc.ipfsCid ? <Check size={12} /> : <Copy size={12} />}
                       </button>
                     </span>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginTop: '4px' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
                       Issued by: {doc.issuerEmail}
                     </span>
                     {(doc.aiDocType || doc.aiKeywords) && (
-                      <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(168, 85, 247, 0.2)', color: 'var(--accent-secondary)' }}>
-                          {doc.aiDocType || 'General'}
-                        </span>
+                      <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        <span className="badge badge-violet">{doc.aiDocType || 'General'}</span>
                         {doc.aiKeywords && doc.aiKeywords !== '[]' && JSON.parse(doc.aiKeywords).map((kw, i) => (
-                          <span key={i} style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.1)', color: 'var(--text-secondary)' }}>
+                          <span key={i} className="badge" style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>
                             {kw}
                           </span>
                         ))}
                       </div>
                     )}
                   </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    <button 
-                      onClick={() => setSelectedDocId(selectedDocId === doc.id ? null : doc.id)} 
-                      className="btn-outline" 
-                      style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem', borderColor: 'var(--accent-secondary)', color: 'var(--accent-secondary)' }}
-                    >
-                      <Award size={14} /> Certificate & ZK
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0 }}>
+                  <button 
+                    onClick={() => setSelectedDocId(selectedDocId === doc.id ? null : doc.id)} 
+                    className="btn-outline" 
+                    style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    <Award size={14} /> Certificate
+                  </button>
+                  <a href={`https://gateway.pinata.cloud/ipfs/${doc.ipfsCid}`} target="_blank" rel="noreferrer" className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    View <ExternalLink size={14} />
+                  </a>
+                  {signedDocs[doc.docHash] ? (
+                    <span className="badge badge-green" style={{ padding: '6px 10px' }}>
+                      <ShieldCheck size={12} /> Verified
+                    </span>
+                  ) : (
+                    <button onClick={() => handleSignOwnership(doc.docHash)} className="btn-ghost" style={{ fontSize: '0.8rem', color: 'var(--neon-cyan)' }}>
+                      Sign to Verify
                     </button>
-                    <a href={`https://gateway.pinata.cloud/ipfs/${doc.ipfsCid}`} target="_blank" rel="noreferrer" className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      View File <ExternalLink size={14} />
-                    </a>
-                    {signedDocs[doc.docHash] ? (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--success)', fontSize: '0.8rem', padding: '6px 12px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px' }}>
-                        <ShieldCheck size={14} /> Verified
-                      </span>
-                    ) : (
-                      <button onClick={() => handleSignOwnership(doc.docHash)} className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' }}>
-                        Sign to Verify
-                      </button>
-                    )}
+                  )}
+                </div>
+              </div>
+              
+              {selectedDocId === doc.id && (
+                <div className="card-glow animate-scale-in" style={{ padding: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+                  <div>
+                    <h4 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>Verifiable Certificate</h4>
+                    <CertificateCanvas doc={doc} />
+                  </div>
+                  <div>
+                    <ZKSelector doc={doc} />
                   </div>
                 </div>
-                
-                {}
-                {selectedDocId === doc.id && (
-                  <div className="glass-panel" style={{ marginTop: '1rem', padding: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', animation: 'fade-in 0.3s' }}>
-                    <div>
-                      <h4 style={{ marginBottom: '1rem' }}>Off-Chain Verifiable Certificate</h4>
-                      <CertificateCanvas doc={doc} />
-                    </div>
-                    <div>
-                      <ZKSelector doc={doc} />
-                    </div>
-                  </div>
-                )}
-                </React.Fragment>
-              ))}
-            </div>
-          )}
-        </div>
+              )}
+              </React.Fragment>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 };
+
 const styles = {
   header: {
-    marginBottom: '2rem'
+    marginBottom: '2rem',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: '1rem'
+  },
+  qrCard: {
+    padding: '2rem',
+  },
+  qrWrapper: {
+    background: '#fff',
+    padding: '10px',
+    borderRadius: '12px',
+    boxShadow: '0 0 30px rgba(0, 240, 255, 0.05)'
+  },
+  qrSmall: {
+    background: '#fff',
+    padding: '6px',
+    borderRadius: '8px'
   },
   list: {
     display: 'flex',
@@ -334,7 +371,16 @@ const styles = {
     padding: '1.25rem',
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
+    gap: '1rem',
+    flexWrap: 'wrap'
+  },
+  hash: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    color: 'var(--text-muted)',
   }
 };
+
 export default Dashboard;

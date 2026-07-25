@@ -11,6 +11,7 @@ import { AnimatePresence } from 'framer-motion';
 import Loader from './components/Loader';
 import PageTransition from './components/PageTransition';
 
+const Home = lazy(() => import('./pages/Home'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const SuperAdminDashboard = lazy(() => import('./pages/SuperAdminDashboard'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
@@ -41,12 +42,24 @@ const AppLayout = () => {
   return (
     <div className="app-container">
       <Navbar />
-      <main style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+      <main style={{ flex: 1 }}>
         <AnimatePresence mode="wait">
           {element && React.cloneElement(element, { key: location.pathname })}
         </AnimatePresence>
       </main>
-      <Toaster position="bottom-right" toastOptions={{ style: { background: '#121216', color: '#fff', border: '1px solid rgba(255, 255, 255, 0.1)' } }} />
+      <Toaster 
+        position="bottom-right" 
+        toastOptions={{ 
+          style: { 
+            background: '#0c0c10', 
+            color: '#F0F0F5', 
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '10px',
+            fontFamily: 'Space Grotesk, sans-serif',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
+          } 
+        }} 
+      />
     </div>
   );
 };
@@ -58,6 +71,10 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
+        element: <PageTransition><Suspense fallback={<Loader />}><Home /></Suspense></PageTransition>
+      },
+      {
+        path: "dashboard",
         element: (
           <ProtectedRoute>
             <PageTransition><Suspense fallback={<Loader />}><RoleDashboard /></Suspense></PageTransition>

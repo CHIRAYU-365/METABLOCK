@@ -199,7 +199,7 @@ const Dashboard = () => {
           <h1 style={{ marginBottom: '0.5rem' }}>
             Welcome, <span className="gradient-text">{user?.username}</span>
           </h1>
-          <p style={{ color: 'var(--text-secondary)' }}>View and verify your issued certificates.</p>
+          <p style={{ color: 'var(--text-secondary)' }}>View and verify your issued documents.</p>
         </div>
       </div>
 
@@ -232,7 +232,7 @@ const Dashboard = () => {
       <div style={{ marginTop: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
           <FileText size={20} color="var(--neon-cyan)" />
-          <h3>My Certificates</h3>
+          <h3>Issued Documents</h3>
           <span className="badge badge-cyan">{visibleDocs.length}</span>
         </div>
 

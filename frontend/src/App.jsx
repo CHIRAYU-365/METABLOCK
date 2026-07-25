@@ -1,9 +1,10 @@
-import React, { useMemo, Suspense, lazy } from 'react';
+import React, { useMemo, Suspense, lazy, useEffect } from 'react';
 import { createBrowserRouter, RouterProvider, useLocation, useOutlet, Navigate } from 'react-router-dom';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { SOLANA_RPC_ENDPOINT } from './utils/solana';
 import Navbar from './components/Navbar';
 import { Toaster } from 'react-hot-toast';
@@ -23,15 +24,29 @@ import './index.css';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
+  const wallet = useWallet();
   if (loading) return <Loader />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user || !wallet.connected) return <Navigate to="/" replace />;
   return children;
 };
 
 const RoleDashboard = () => {
   const { user } = useAuth();
-  if (user?.role === 'SUPER_ADMIN') return <SuperAdminDashboard />;
-  if (user?.role === 'ADMIN') return <AdminDashboard />;
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const tab = queryParams.get('tab') || (user?.role === 'SUPER_ADMIN' ? 'overview' : user?.role === 'ADMIN' ? 'issue' : 'mydocs');
+
+  // Super Admin specific tabs
+  if ((tab === 'overview' || tab === 'users' || tab === 'requests') && user?.role === 'SUPER_ADMIN') {
+    return <SuperAdminDashboard />;
+  }
+
+  // Admin specific tabs (Super Admin inherits these)
+  if ((tab === 'issue' || tab === 'admin_stats') && (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN')) {
+    return <AdminDashboard />;
+  }
+
+  // Default / User tab (Everyone can see their own documents)
   return <Dashboard />; 
 };
 
@@ -41,7 +56,7 @@ const AppLayout = () => {
 
   return (
     <div className="app-container">
-      <Navbar />
+      {location.pathname !== '/' && <Navbar />}
       <main style={{ flex: 1 }}>
         <AnimatePresence mode="wait">
           {element && React.cloneElement(element, { key: location.pathname })}
@@ -83,11 +98,11 @@ const router = createBrowserRouter([
       },
       {
         path: "login",
-        element: <PageTransition><Suspense fallback={<Loader />}><Login /></Suspense></PageTransition>
+        element: <Navigate to="/" replace />
       },
       {
         path: "register",
-        element: <PageTransition><Suspense fallback={<Loader />}><Register /></Suspense></PageTransition>
+        element: <Navigate to="/" replace />
       },
       {
         path: "verify",
@@ -98,6 +113,18 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
+  // Enforce ZTNA: Clear previous wallet adapter states to ensure manual reconnection is always required
+  useEffect(() => {
+    localStorage.removeItem('walletName');
+    
+    // Explicitly disconnect if closing window
+    const handleUnload = () => {
+      localStorage.removeItem('walletName');
+    };
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
+  }, []);
+
   const endpoint = useMemo(() => SOLANA_RPC_ENDPOINT, []);
   const wallets = useMemo(
     () => [new PhantomWalletAdapter()],

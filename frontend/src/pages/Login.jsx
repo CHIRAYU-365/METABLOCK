@@ -1,53 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Html5QrcodeScanner } from 'html5-qrcode';
-import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Camera, CalendarCheck } from 'lucide-react';
+import { CalendarCheck } from 'lucide-react';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showScanner, setShowScanner] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    let scanner = null;
-    if (showScanner) {
-      // Small timeout to allow element rendering
-      setTimeout(() => {
-        try {
-          scanner = new Html5QrcodeScanner("reader", {
-            fps: 10,
-            qrbox: { width: 250, height: 250 }
-          }, false);
-          
-          scanner.render(async (decodedText) => {
-            try {
-              await scanner.clear();
-              setShowScanner(false);
-              const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-              const res = await axios.post(`${API_URL}/api/auth/qr-attendance`, { userId: decodedText });
-              toast.success(res.data.message, { duration: 6000 });
-            } catch (err) {
-              console.error(err);
-              toast.error(err.response?.data?.error || "Invalid QR Code or Scan Error");
-            }
-          }, (err) => {});
-        } catch (e) {
-          console.error("Scanner init error:", e);
-        }
-      }, 100);
-    }
-    return () => {
-      if (scanner) {
-        scanner.clear().catch(e => console.error("Error clearing scanner", e));
-      }
-    };
-  }, [showScanner]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -67,23 +31,7 @@ const Login = () => {
         <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>Login to ProofChain</h2>
         {error && <div style={styles.error}>{error}</div>}
         
-        {showScanner ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', marginBottom: '1.5rem' }}>
-            <h4 style={{ color: 'var(--accent-secondary)' }}>Point Attendance QR Code at Camera</h4>
-            <div id="reader" style={{ width: '100%', maxWidth: '350px', overflow: 'hidden', borderRadius: '12px', border: '1px solid var(--border-color)' }}></div>
-            <button onClick={() => setShowScanner(false)} className="btn-outline" style={{ width: '100%' }}>
-              Cancel Scanner
-            </button>
-          </div>
-        ) : (
-          <>
-            <button 
-              onClick={() => setShowScanner(true)} 
-              className="btn-primary" 
-              style={{ width: '100%', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', background: 'var(--accent-secondary)' }}
-            >
-              <Camera size={18} /> Tap to Scan Attendance QR
-            </button>
+
             <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.inputGroup}>
             <label style={styles.label}>Email Address</label>
@@ -109,8 +57,7 @@ const Login = () => {
             {loading ? 'Authenticating...' : 'Login'}
             </button>
           </form>
-          </>
-        )}
+
         <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-secondary)' }}>
           Don't have an account? <Link to="/register" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>Register here</Link>
         </p>

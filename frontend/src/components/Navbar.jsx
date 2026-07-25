@@ -46,29 +46,44 @@ const Navbar = () => {
 
           {/* Desktop Nav */}
           <div style={styles.desktopNav}>
-            <Link 
-              to="/" 
-              style={{ ...styles.navLink, ...(isActive('/') ? styles.navLinkActive : {}) }}
-            >
-              Home
-            </Link>
-            <Link 
-              to="/verify" 
-              style={{ ...styles.navLink, ...(isActive('/verify') ? styles.navLinkActive : {}) }}
-            >
-              Verify
-            </Link>
-            {user && (
+
+            {!user && (
               <Link 
-                to="/dashboard" 
-                style={{ ...styles.navLink, ...(isActive('/dashboard') ? styles.navLinkActive : {}) }}
+                to="/login" 
+                style={{ ...styles.navLink, ...(isActive('/login') ? styles.navLinkActive : {}) }}
               >
-                <LayoutDashboard size={14} />
-                Dashboard
-                {user.role !== 'USER' && (
-                  <span style={styles.roleBadge}>{user.role.replace('_', ' ')}</span>
-                )}
+                Login / Signup
               </Link>
+            )}
+            {user && (
+              <>
+                <Link 
+                  to={user.role === 'SUPER_ADMIN' ? "/dashboard?tab=overview" : user.role === 'ADMIN' ? "/dashboard?tab=issue" : "/dashboard?tab=mydocs"} 
+                  style={{ ...styles.navLink, ...(isActive('/dashboard') && (!location.search || location.search.includes('tab=overview') || location.search.includes('tab=issue') || location.search.includes('tab=mydocs')) ? styles.navLinkActive : {}) }}
+                >
+                  <LayoutDashboard size={14} />
+                  Dashboard
+                  {user.role !== 'USER' && (
+                    <span style={styles.roleBadge}>{user.role.replace('_', ' ')}</span>
+                  )}
+                </Link>
+                {user.role === 'SUPER_ADMIN' && (
+                  <>
+                    <Link 
+                      to="/dashboard?tab=users" 
+                      style={{ ...styles.navLink, ...(location.search.includes('tab=users') ? styles.navLinkActive : {}) }}
+                    >
+                      Platform Users
+                    </Link>
+                    <Link 
+                      to="/dashboard?tab=requests" 
+                      style={{ ...styles.navLink, ...(location.search.includes('tab=requests') ? styles.navLinkActive : {}) }}
+                    >
+                      Multi-Sig Requests
+                    </Link>
+                  </>
+                )}
+              </>
             )}
           </div>
 

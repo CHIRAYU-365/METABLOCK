@@ -1,35 +1,52 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Shield, Zap, Lock, FileCheck, ArrowRight, ChevronDown } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Shield, Zap, Lock, FileCheck, ArrowRight, ChevronDown, X } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import toast from 'react-hot-toast';
 
 const Home = () => {
   const [counters, setCounters] = useState({ docs: 0, txns: 0, uptime: 0 });
   const heroRef = useRef(null);
   const statsRef = useRef(null);
   const featuresRef = useRef(null);
+  
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  
+  const { login, register, user } = useAuth();
+  const wallet = useWallet();
+  const navigate = useNavigate();
 
-  // Animated counters
+  // Watch for both conditions to be met
   useEffect(() => {
-    const targets = { docs: 12847, txns: 45230, uptime: 99.9 };
-    const duration = 2000;
-    const start = Date.now();
+    if (user && wallet.connected && showAuthModal) {
+      toast.success("Zero-Trust Verification Complete");
+      setShowAuthModal(false);
+      navigate('/dashboard');
+    }
+  }, [user, wallet.connected, showAuthModal, navigate]);
 
-    const timer = setInterval(() => {
-      const elapsed = Date.now() - start;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-
-      setCounters({
-        docs: Math.floor(eased * targets.docs),
-        txns: Math.floor(eased * targets.txns),
-        uptime: parseFloat((eased * targets.uptime).toFixed(1))
-      });
-
-      if (progress >= 1) clearInterval(timer);
-    }, 16);
-
-    return () => clearInterval(timer);
-  }, []);
+  const handleAuthSubmit = async (e) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    try {
+      if (isRegistering) {
+        await register(username, email, password);
+      } else {
+        await login(email, password);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Authentication failed');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   // Intersection observer for scroll animations
   useEffect(() => {
@@ -50,7 +67,94 @@ const Home = () => {
   }, []);
 
   return (
-    <div style={{ overflow: 'hidden' }}>
+    <div style={{ overflow: 'hidden', height: showAuthModal ? '100vh' : 'auto' }}>
+      {/* ════════ AUTH MODAL (ZTNA) ════════ */}
+      {showAuthModal && (
+        <div style={styles.modalOverlay}>
+          <div className="card-glow animate-scale-in" style={styles.modalContent}>
+            <button style={styles.closeBtn} onClick={() => setShowAuthModal(false)}><X size={24} /></button>
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <div style={styles.logoIcon}><span style={styles.logoGlyph}>P</span></div>
+              <h2 style={{ marginTop: '1rem', color: 'var(--text-primary)' }}>Secure Portal Access</h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Strict Zero-Trust Network Access (ZTNA) Policy Enforced</p>
+            </div>
+            
+            <div style={styles.stepContainer}>
+              {!user ? (
+                /* STEP 1: WEB2 IDENTITY */
+                <div style={{ ...styles.authStep, opacity: 1 }} className="animate-fade-in">
+                  <div style={styles.stepHeader}>
+                    <div style={{ ...styles.authStepNumber, background: 'var(--neon-cyan)' }}>1</div>
+                    <h4 style={{ margin: 0, fontSize: '1rem' }}>Identity Verification (Web2)</h4>
+                  </div>
+                  <form onSubmit={handleAuthSubmit}>
+                    {isRegistering && (
+                      <input 
+                        type="text" 
+                        placeholder="Username" 
+                        required 
+                        value={username} 
+                        onChange={e => setUsername(e.target.value)} 
+                        style={styles.modalInput} 
+                      />
+                    )}
+                    <input 
+                      type="email" 
+                      placeholder="Email Address" 
+                      required 
+                      value={email} 
+                      onChange={e => setEmail(e.target.value)} 
+                      style={styles.modalInput} 
+                    />
+                    <input 
+                      type="password" 
+                      placeholder="Password" 
+                      required 
+                      value={password} 
+                      onChange={e => setPassword(e.target.value)} 
+                      style={styles.modalInput} 
+                    />
+                    <button type="submit" className="btn-primary" disabled={authLoading} style={{ width: '100%' }}>
+                      {authLoading ? 'Verifying...' : isRegistering ? 'Sign Up' : 'Login'}
+                    </button>
+                    <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                      {isRegistering ? "Already have an account? " : "Don't have an account? "}
+                      <span style={{ color: 'var(--neon-cyan)', cursor: 'pointer' }} onClick={() => setIsRegistering(!isRegistering)}>
+                        {isRegistering ? "Login" : "Sign Up"}
+                      </span>
+                    </p>
+                  </form>
+                </div>
+              ) : (
+                /* STEP 2: WEB3 WALLET */
+                <div style={{ ...styles.authStep, opacity: 1 }} className="animate-fade-in">
+                  <div style={styles.stepHeader}>
+                    <div style={{ ...styles.authStepNumber, background: wallet.connected ? 'var(--neon-green)' : 'var(--neon-violet)' }}>2</div>
+                    <h4 style={{ margin: 0, fontSize: '1rem' }}>Cryptographic Verification (Web3)</h4>
+                  </div>
+                  {!wallet.connected ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '1rem 0' }}>
+                      <div style={{ padding: '0.75rem 1.5rem', background: 'rgba(0, 255, 170, 0.1)', border: '1px solid var(--neon-green)', borderRadius: '8px', color: 'var(--neon-green)', textAlign: 'center', width: '100%', marginBottom: '1rem' }}>
+                        ✓ Web2 Identity Verified ({user.email})
+                      </div>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>Connect your Solana wallet to complete authorization.</p>
+                      <WalletMultiButton style={{ background: 'var(--neon-violet)' }} />
+                    </div>
+                  ) : (
+                    <div style={{ padding: '1.5rem', background: 'rgba(0, 255, 170, 0.1)', border: '1px solid var(--neon-green)', borderRadius: '8px', color: 'var(--neon-green)', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
+                      <Shield size={32} />
+                      <strong>✓ Fully Authorized</strong>
+                      <span style={{ fontSize: '0.8rem', color: 'rgba(0, 255, 170, 0.8)' }}>Redirecting to Secure Portal...</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ filter: showAuthModal ? 'blur(10px) brightness(0.4)' : 'none', transition: 'all 0.3s ease' }}>
       {/* ════════ HERO SECTION ════════ */}
       <section ref={heroRef} style={styles.hero}>
         {/* Grid background */}
@@ -79,14 +183,10 @@ const Home = () => {
           </p>
 
           <div style={styles.heroCtas} className="animate-fade-in-delay-3">
-            <Link to="/verify" className="btn-primary" style={styles.ctaBtn}>
-              <FileCheck size={18} />
-              Verify a Document
-              <ArrowRight size={16} />
-            </Link>
-            <Link to="/login" className="btn-outline" style={styles.ctaBtn}>
-              Admin Portal
-            </Link>
+            <button onClick={() => setShowAuthModal(true)} className="btn-primary" style={{ ...styles.ctaBtn, padding: '16px 40px', fontSize: '1.2rem' }}>
+              Get Started
+              <ArrowRight size={20} />
+            </button>
           </div>
         </div>
 
@@ -96,25 +196,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ════════ STATS BAR ════════ */}
-      <section ref={statsRef} className="reveal-section" style={styles.statsSection}>
-        <div style={styles.statsGrid}>
-          <div style={styles.statItem}>
-            <span style={styles.statNumber} className="gradient-text">{counters.docs.toLocaleString()}</span>
-            <span style={styles.statLabel}>Documents Verified</span>
-          </div>
-          <div style={styles.statDivider} />
-          <div style={styles.statItem}>
-            <span style={styles.statNumber} className="gradient-text">{counters.txns.toLocaleString()}</span>
-            <span style={styles.statLabel}>Blockchain Transactions</span>
-          </div>
-          <div style={styles.statDivider} />
-          <div style={styles.statItem}>
-            <span style={styles.statNumber} className="gradient-text">{counters.uptime}%</span>
-            <span style={styles.statLabel}>Network Uptime</span>
-          </div>
-        </div>
-      </section>
 
       {/* ════════ FEATURES ════════ */}
       <section ref={featuresRef} style={styles.featuresSection}>
@@ -218,6 +299,7 @@ const Home = () => {
           transform: translateY(0);
         }
       `}</style>
+      </div>
     </div>
   );
 };
@@ -265,6 +347,86 @@ const steps = [
 ];
 
 const styles = {
+  // Modal Styles
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backdropFilter: 'blur(10px)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+    padding: '1rem',
+  },
+  modalContent: {
+    background: '#0c0c10',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '16px',
+    padding: '2.5rem',
+    width: '100%',
+    maxWidth: '450px',
+    position: 'relative',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: '1rem',
+    right: '1rem',
+    background: 'transparent',
+    color: 'var(--text-muted)',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '4px'
+  },
+  stepContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    width: '100%',
+  },
+  authStep: {
+    background: 'rgba(255, 255, 255, 0.02)',
+    border: '1px solid var(--border-subtle)',
+    borderRadius: '12px',
+    padding: '1.5rem',
+    transition: 'all 0.3s ease',
+    width: '100%'
+  },
+  stepHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    marginBottom: '1.5rem'
+  },
+  authStepNumber: {
+    width: '28px',
+    height: '28px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#000',
+    fontWeight: 'bold',
+    fontSize: '0.9rem',
+    flexShrink: 0
+  },
+  modalInput: {
+    width: '100%',
+    padding: '12px 16px',
+    marginBottom: '1rem',
+    background: 'rgba(0, 0, 0, 0.3)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '8px',
+    color: 'var(--text-primary)',
+    fontFamily: 'Space Grotesk, sans-serif',
+    outline: 'none',
+  },
+  // Hero
   hero: {
     minHeight: '100vh',
     display: 'flex',

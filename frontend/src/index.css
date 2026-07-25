@@ -15,19 +15,19 @@
   --bg-glass-active: rgba(24, 24, 36, 0.9);
 
   /* Neon accents */
-  --neon-cyan: #00F0FF;
-  --neon-violet: #8B5CF6;
-  --neon-pink: #EC4899;
+  --neon-cyan: #FF512F;
+  --neon-violet: #DD2476;
+  --neon-pink: #FFB347;
   --neon-green: #10B981;
   --neon-red: #EF4444;
   --neon-amber: #F59E0B;
 
   /* Glow variants */
-  --glow-cyan: rgba(0, 240, 255, 0.4);
-  --glow-violet: rgba(139, 92, 246, 0.4);
-  --glow-pink: rgba(236, 72, 153, 0.3);
-  --glow-cyan-soft: rgba(0, 240, 255, 0.08);
-  --glow-violet-soft: rgba(139, 92, 246, 0.08);
+  --glow-cyan: rgba(255, 81, 47, 0.4);
+  --glow-violet: rgba(221, 36, 118, 0.4);
+  --glow-pink: rgba(255, 179, 71, 0.3);
+  --glow-cyan-soft: rgba(255, 81, 47, 0.08);
+  --glow-violet-soft: rgba(221, 36, 118, 0.08);
 
   /* Text */
   --text-primary: #F0F0F5;
@@ -38,8 +38,8 @@
   /* Borders */
   --border-subtle: rgba(255, 255, 255, 0.06);
   --border-default: rgba(255, 255, 255, 0.1);
-  --border-glow: rgba(0, 240, 255, 0.2);
-  --border-glow-strong: rgba(0, 240, 255, 0.5);
+  --border-glow: rgba(255, 81, 47, 0.2);
+  --border-glow-strong: rgba(255, 81, 47, 0.5);
 
   /* Semantic */
   --success: #10B981;
@@ -71,8 +71,8 @@
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --shadow-glow-cyan: 0 0 20px rgba(0, 240, 255, 0.15), 0 0 60px rgba(0, 240, 255, 0.05);
-  --shadow-glow-violet: 0 0 20px rgba(139, 92, 246, 0.15), 0 0 60px rgba(139, 92, 246, 0.05);
+  --shadow-glow-cyan: 0 0 20px rgba(255, 81, 47, 0.15), 0 0 60px rgba(255, 81, 47, 0.05);
+  --shadow-glow-violet: 0 0 20px rgba(221, 36, 118, 0.15), 0 0 60px rgba(221, 36, 118, 0.05);
 
   /* Transitions */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -118,9 +118,9 @@ body::before {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(0, 240, 255, 0.07), transparent),
-    radial-gradient(ellipse 60% 40% at 80% 20%, rgba(139, 92, 246, 0.07), transparent),
-    radial-gradient(ellipse 50% 60% at 60% 80%, rgba(236, 72, 153, 0.04), transparent);
+    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(255, 81, 47, 0.07), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 20%, rgba(221, 36, 118, 0.07), transparent),
+    radial-gradient(ellipse 50% 60% at 60% 80%, rgba(255, 179, 71, 0.04), transparent);
   pointer-events: none;
   z-index: 0;
   animation: meshDrift 30s ease-in-out infinite alternate;

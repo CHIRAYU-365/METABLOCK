@@ -7,12 +7,21 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import Papa from 'papaparse';
 import { QRCodeSVG } from 'qrcode.react';
 
+import { useLocation } from 'react-router-dom';
+
 const SuperAdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('users');
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const tabFromUrl = queryParams.get('tab') || 'overview';
+
+  const [activeTab, setActiveTab] = useState(tabFromUrl);
+
+  useEffect(() => {
+    setActiveTab(tabFromUrl);
+  }, [tabFromUrl]);
   const [stats, setStats] = useState({ totalUsers: 0, totalAdmins: 0, pendingAdmins: 0 });
   const [chartData, setChartData] = useState([]);
   const [users, setUsers] = useState([]);
-  const [auditLogs, setAuditLogs] = useState([]);
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const { token, user } = useAuth();
@@ -24,16 +33,14 @@ const SuperAdminDashboard = () => {
     setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const [statsRes, usersRes, auditRes, requestsRes] = await Promise.all([
+      const [statsRes, usersRes, requestsRes] = await Promise.all([
         axios.get(`${API_URL}/api/superadmin/dashboard`, { headers }),
         axios.get(`${API_URL}/api/superadmin/users`, { headers }),
-        axios.get(`${API_URL}/api/superadmin/audit`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${API_URL}/api/superadmin/requests`, { headers }).catch(() => ({ data: { requests: [] } }))
       ]);
       setStats(statsRes.data.stats);
       setChartData(statsRes.data.chartData || []);
       setUsers(usersRes.data.users);
-      setAuditLogs(auditRes.data || []);
       setRequests(requestsRes.data.requests || []);
     } catch (err) {
       console.error(err);
@@ -197,7 +204,7 @@ const SuperAdminDashboard = () => {
   const [attendanceRecords, setAttendanceRecords] = useState([]);
 
   const viewAttendanceModal = () => {
-    const scanLogs = auditLogs.filter(log => log.action === 'CHECK_IN' || log.action === 'CHECK_OUT');
+    const scanLogs = [];
     if (scanLogs.length === 0) {
       return toast.error("No Check-In/Check-Out records found.");
     }
@@ -245,12 +252,14 @@ const SuperAdminDashboard = () => {
 
   return (
     <div className="page-container animate-fade-in">
-      <div style={styles.header}>
-        <h1 style={{ marginBottom: '0.5rem' }}>
-          <span className="gradient-text">Super Admin</span> Dashboard
-        </h1>
-        <p style={{ color: 'var(--text-secondary)' }}>Welcome back, {user?.username}. Manage the platform's roles and privileges here.</p>
-      </div>
+      {activeTab === 'overview' && (
+        <>
+          <div style={styles.header}>
+            <h1 style={{ marginBottom: '0.5rem' }}>
+              <span className="gradient-text">Super Admin</span> Dashboard
+            </h1>
+            <p style={{ color: 'var(--text-secondary)' }}>Welcome back, {user?.username}. Manage the platform's roles and privileges here.</p>
+          </div>
       <div style={styles.statsGrid}>
         <div className="glass-panel" style={styles.statCard}>
           <div style={styles.statIcon}><Users size={24} /></div>
@@ -294,34 +303,19 @@ const SuperAdminDashboard = () => {
         </div>
       )}
 
-      <div className="glass-panel" style={{ marginTop: '2rem', padding: '2rem' }}>
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
-          <button 
-            className={activeTab === 'users' ? 'btn-primary' : 'btn-outline'} 
-            onClick={() => setActiveTab('users')}
-            style={{ padding: '8px 16px', borderRadius: '8px' }}
-          >
-            Platform Users
-          </button>
-          <button 
-            className={activeTab === 'audit' ? 'btn-primary' : 'btn-outline'} 
-            onClick={() => setActiveTab('audit')}
-            style={{ padding: '8px 16px', borderRadius: '8px' }}
-          >
-            Audit Logs
-          </button>
-          <button 
-            className={activeTab === 'requests' ? 'btn-primary' : 'btn-outline'} 
-            onClick={() => setActiveTab('requests')}
-            style={{ padding: '8px 16px', borderRadius: '8px' }}
-          >
-            Multi-Sig Requests
-          </button>
-        </div>
-        
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>Loading data...</div>
-        ) : activeTab === 'users' ? (
+        </>
+      )}
+
+      {activeTab === 'users' && (
+        <div className="glass-panel" style={{ padding: '2rem' }}>
+          <div style={styles.header}>
+            <h1 style={{ marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Platform Users</h1>
+            <p style={{ color: 'var(--text-secondary)' }}>Manage access, roles, and view ID cards for all personnel.</p>
+          </div>
+          
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>Loading data...</div>
+          ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={styles.table}>
               <thead>
@@ -413,105 +407,74 @@ const SuperAdminDashboard = () => {
               </tbody>
             </table>
           </div>
-        ) : activeTab === 'audit' ? (
-          <div style={{ overflowX: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginBottom: '1rem' }}>
-              <button 
-                onClick={viewAttendanceModal} 
-                className="btn-primary" 
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '8px 16px', fontSize: '0.85rem' }}
-              >
-                <Clock size={16} /> View Shift Attendance Logs
-              </button>
-            </div>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Timestamp</th>
-                  <th style={styles.th}>Action</th>
-                  <th style={styles.th}>Details</th>
-                  <th style={styles.th}>IP Address</th>
-                </tr>
-              </thead>
-              <tbody>
-                {auditLogs.map(log => (
-                  <tr key={log.id} style={styles.tr}>
-                    <td style={styles.td}>
-                      <div style={{ fontSize: '0.85rem' }}>{new Date(log.createdAt).toLocaleString()}</div>
-                    </td>
-                    <td style={styles.td}>
-                      <span style={{...styles.statusBadge, backgroundColor: 'rgba(99, 102, 241, 0.2)', color: 'var(--primary)'}}>
-                        {log.action}
-                      </span>
-                    </td>
-                    <td style={styles.td}>
-                      <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{log.details}</div>
-                    </td>
-                    <td style={styles.td}>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{log.ipAddress || 'Unknown'}</div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {auditLogs.length === 0 && (
-              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No audit logs found.</div>
-            )}
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Document</th>
-                  <th style={styles.th}>Issuer (Admin)</th>
-                  <th style={styles.th}>Status</th>
-                  <th style={styles.th}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {requests.map(req => (
-                  <tr key={req.id} style={styles.tr}>
-                    <td style={styles.td}>
-                      <div style={{ fontWeight: '500' }}>{req.name}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Owner: {req.ownerEmail}</div>
-                    </td>
-                    <td style={styles.td}>
-                      <div style={{ fontSize: '0.9rem' }}>{req.issuerEmail}</div>
-                    </td>
-                    <td style={styles.td}>
-                      <span style={{
-                        ...styles.statusBadge,
-                        backgroundColor: req.status === 'APPROVED' ? 'rgba(34, 197, 94, 0.2)' : 
-                                         req.status === 'PENDING' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                        color: req.status === 'APPROVED' ? 'var(--success)' : 
-                               req.status === 'PENDING' ? 'var(--warning)' : 'var(--error)'
-                      }}>
-                        {req.status}
-                      </span>
-                    </td>
-                    <td style={styles.td}>
-                      {req.status === 'PENDING' && (
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button onClick={() => updateRequestStatus(req.id, 'APPROVED')} className="btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
-                            Approve
-                          </button>
-                          <button onClick={() => updateRequestStatus(req.id, 'REJECTED')} className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', borderColor: 'var(--error)', color: 'var(--error)' }}>
-                            Reject
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {requests.length === 0 && (
-              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No multi-sig requests found.</div>
-            )}
-          </div>
         )}
-      </div>
+        </div>
+      )}
+
+      {activeTab === 'requests' && (
+        <div className="glass-panel" style={{ padding: '2rem' }}>
+          <div style={styles.header}>
+            <h1 style={{ marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Multi-Sig Requests</h1>
+            <p style={{ color: 'var(--text-secondary)' }}>Review and approve documents that require multiple administrator signatures.</p>
+          </div>
+
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>Loading data...</div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>Document</th>
+                    <th style={styles.th}>Issuer (Admin)</th>
+                    <th style={styles.th}>Status</th>
+                    <th style={styles.th}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {requests.map(req => (
+                    <tr key={req.id} style={styles.tr}>
+                      <td style={styles.td}>
+                        <div style={{ fontWeight: '500' }}>{req.name}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Owner: {req.ownerEmail}</div>
+                      </td>
+                      <td style={styles.td}>
+                        <div style={{ fontSize: '0.9rem' }}>{req.issuerEmail}</div>
+                      </td>
+                      <td style={styles.td}>
+                        <span style={{
+                          ...styles.statusBadge,
+                          backgroundColor: req.status === 'APPROVED' ? 'rgba(34, 197, 94, 0.2)' : 
+                                           req.status === 'PENDING' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                          color: req.status === 'APPROVED' ? 'var(--success)' : 
+                                 req.status === 'PENDING' ? 'var(--warning)' : 'var(--error)'
+                        }}>
+                          {req.status}
+                        </span>
+                      </td>
+                      <td style={styles.td}>
+                        {req.status === 'PENDING' && (
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button onClick={() => updateRequestStatus(req.id, 'APPROVED')} className="btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
+                              Approve
+                            </button>
+                            <button onClick={() => updateRequestStatus(req.id, 'REJECTED')} className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', borderColor: 'var(--error)', color: 'var(--error)' }}>
+                              Reject
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {requests.length === 0 && (
+                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No multi-sig requests found.</div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {showAttendanceModal && (
         <div style={styles.modalOverlay}>

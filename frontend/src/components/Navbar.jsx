@@ -225,7 +225,7 @@ const styles = {
     fontFamily: 'Outfit, sans-serif',
     fontWeight: 700,
     fontSize: '1.2rem',
-    color: '#F0F0F5',
+    color: 'var(--text-primary)',
     letterSpacing: '-0.02em'
   },
   desktopNav: {
